@@ -77,6 +77,47 @@ function WindowCell({ window, now }: { window: LedgerWindow; now: number }) {
   );
 }
 
+function SummaryWindow({
+  aggregate,
+  entries,
+  now,
+}: {
+  aggregate: ReturnType<typeof summarizeLedgerWindows>;
+  entries: QuotaFileEntry[];
+  now: number;
+}) {
+  const { t } = useTranslation();
+  const label = aggregate.primary?.label ?? t('quota_management.ledger.remaining');
+  return (
+    <div className={styles.summaryWindow} role="group" aria-label={label}>
+      <div className={styles.summaryLabel}>{label}</div>
+      <div className={styles.total}>
+        <strong>
+          {aggregate.remaining === null ? '--' : `${Math.round(aggregate.remaining)}%`}
+        </strong>
+        <span>{t('quota_management.ledger.capacity', { value: aggregate.capacity })}</span>
+      </div>
+      <div className={styles.segments}>
+        {aggregate.windows.map((window, index) => (
+          <Meter
+            key={getQuotaCacheKey(entries[index].file)}
+            remaining={window?.remaining ?? null}
+          />
+        ))}
+      </div>
+      <Reset atMs={aggregate.resetAtMs} now={now} />
+      {aggregate.knownCount < entries.length && (
+        <div className={styles.coverage}>
+          {t('quota_management.ledger.observed', {
+            count: aggregate.knownCount,
+            total: entries.length,
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function LedgerRow({
   entry,
   quota,
@@ -184,15 +225,18 @@ export function QuotaLedger({
         {groups.map(({ provider, summary }) => {
           const windowRows = summary.map((entry) => ledgerWindows(provider, quotaFor(entry), t));
           const aggregate = summarizeLedgerWindows(windowRows, now);
-          const secondary =
-            provider === 'claude' && aggregate.primary?.id !== 'seven-day'
-              ? summarizeLedgerWindows(
-                  windowRows.map((windows) =>
-                    windows.filter((window) => window.id === 'seven-day')
-                  ),
-                  now
-                )
-              : null;
+          const weeklyAggregates =
+            provider === 'claude'
+              ? ['seven-day', 'seven-day-fable']
+                  .map((id) =>
+                    summarizeLedgerWindows(
+                      windowRows.map((windows) => windows.filter((window) => window.id === id)),
+                      now
+                    )
+                  )
+                  .filter((window) => window.primary)
+              : [];
+          const aggregates = weeklyAggregates.length ? weeklyAggregates : [aggregate];
           const icon = getAuthFileIcon(provider, resolvedTheme);
           return (
             <section
@@ -207,40 +251,14 @@ export function QuotaLedger({
                 </strong>
                 <span>{t('quota_management.meta_credentials', { count: summary.length })}</span>
               </div>
-              <div className={styles.summaryLabel}>
-                {aggregate.primary?.label ?? t('quota_management.ledger.remaining')}
-              </div>
-              <div className={styles.total}>
-                <strong>
-                  {aggregate.remaining === null ? '--' : `${Math.round(aggregate.remaining)}%`}
-                </strong>
-                <span>{t('quota_management.ledger.capacity', { value: aggregate.capacity })}</span>
-              </div>
-              <div className={styles.segments}>
-                {aggregate.windows.map((window, index) => (
-                  <Meter
-                    key={getQuotaCacheKey(summary[index].file)}
-                    remaining={window?.remaining ?? null}
-                  />
-                ))}
-              </div>
-              <Reset atMs={aggregate.resetAtMs} now={now} />
-              {aggregate.knownCount < summary.length && (
-                <div className={styles.coverage}>
-                  {t('quota_management.ledger.observed', {
-                    count: aggregate.knownCount,
-                    total: summary.length,
-                  })}
-                </div>
-              )}
-              {secondary?.primary && (
-                <div className={styles.secondary}>
-                  <span>{secondary.primary.label}</span>
-                  <strong>
-                    {secondary.remaining === null ? '--' : `${Math.round(secondary.remaining)}%`}
-                  </strong>
-                </div>
-              )}
+              {aggregates.map((window) => (
+                <SummaryWindow
+                  key={window.primary?.id ?? 'remaining'}
+                  aggregate={window}
+                  entries={summary}
+                  now={now}
+                />
+              ))}
             </section>
           );
         })}

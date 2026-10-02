@@ -365,6 +365,14 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
   config.routingSessionAffinity = normalizeBoolean(at('routing.session-affinity'));
   const affinityTTL = at('routing.session-affinity-ttl');
   if (typeof affinityTTL === 'string') config.routingSessionAffinityTTL = affinityTTL;
+  const preferredAccounts = at('routing.preferred-accounts');
+  if (isRecord(preferredAccounts)) {
+    config.routingPreferredAccounts = Object.fromEntries(
+      Object.entries(preferredAccounts).filter(
+        (entry): entry is [string, string] => typeof entry[1] === 'string' && !!entry[1].trim()
+      )
+    );
+  }
   const keys = at('access.api-keys');
   config.apiKeys = Array.isArray(keys)
     ? keys.filter((key): key is string => typeof key === 'string')

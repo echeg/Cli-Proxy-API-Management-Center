@@ -334,6 +334,12 @@ export function QuotaPage() {
       />
 
       <section className={styles.workbench}>
+        <SubscriptionRouting
+          key={sessionGeneration}
+          disabled={disableControls}
+          files={filesGeneration === sessionGeneration ? files : []}
+          showEmails={showEmails}
+        />
         {/* Keep provider navigation above the search and display sort controls. */}
         <div className={styles.tabsRow} data-reveal>
           <ProviderTabs
@@ -512,7 +518,6 @@ export function QuotaPage() {
             resolvedTheme={resolvedTheme}
           />
         )}
-        <SubscriptionRouting key={sessionGeneration} disabled={disableControls} />
       </section>
     </div>
   );

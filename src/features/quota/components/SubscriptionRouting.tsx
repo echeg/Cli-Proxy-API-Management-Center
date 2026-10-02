@@ -13,9 +13,20 @@ import {
 import type { SubscriptionRoutingSettings } from '@/services/api/subscriptionRouting';
 import { useConfigStore } from '@/stores';
 import { goDurationSeconds } from '@/features/config/visualConfigAdditions';
+import type { AuthFileItem } from '@/types';
+import { SubscriptionAccounts } from './SubscriptionAccounts';
+import { maskQuotaText } from '../ledgerModel';
 import styles from './SubscriptionRouting.module.scss';
 
-export function SubscriptionRouting({ disabled }: { disabled: boolean }) {
+export function SubscriptionRouting({
+  disabled,
+  files,
+  showEmails,
+}: {
+  disabled: boolean;
+  files: AuthFileItem[];
+  showEmails: boolean;
+}) {
   const { t } = useTranslation();
   const strategyId = useId();
   const [values, setValues] = useState<SubscriptionRoutingSettings | null>(null);
@@ -106,15 +117,15 @@ export function SubscriptionRouting({ disabled }: { disabled: boolean }) {
     options.push({ value: values.strategy, label: values.strategy });
 
   return (
-    <details className={styles.panel}>
-      <summary>
-        <strong>{t('quota_management.routing.title')}</strong>
+    <section className={styles.panel} aria-label={t('quota_management.routing.title')}>
+      <div className={styles.heading}>
+        <h2>{t('quota_management.routing.title')}</h2>
         <span>
           {values
             ? options.find((option) => option.value === values.strategy)?.label
             : t('common.loading')}
         </span>
-      </summary>
+      </div>
       <div className={styles.content}>
         <p>{t('quota_management.routing.description')}</p>
         <div className={styles.fields}>
@@ -143,9 +154,22 @@ export function SubscriptionRouting({ disabled }: { disabled: boolean }) {
             placeholder="1h"
             value={values?.sessionAffinityTTL ?? ''}
             disabled={blocked}
+            title={t('quota_management.routing.ttl_hint')}
             error={invalidTTL ? t('quota_management.routing.invalid_ttl') : undefined}
             onChange={(event) => change({ sessionAffinityTTL: event.target.value })}
           />
+        </div>
+        <SubscriptionAccounts
+          files={files}
+          showEmails={showEmails}
+          disabled={blocked}
+          disconnected={disabled}
+          preferredAccounts={values?.preferredAccounts ?? {}}
+          onChange={(preferredAccounts) => change({ preferredAccounts })}
+        />
+        <p>{t('quota_management.routing.manual_hint')}</p>
+        <p>{t('quota_management.routing.activity_hint')}</p>
+        <div className={styles.actions}>
           <Button
             type="button"
             disabled={blocked || !dirty || invalidTTL}
@@ -155,10 +179,9 @@ export function SubscriptionRouting({ disabled }: { disabled: boolean }) {
             {t('common.save')}
           </Button>
         </div>
-        <p>{t('quota_management.routing.affinity_hint')}</p>
         {error && (
           <div className={styles.error} role="alert">
-            {error}{' '}
+            {showEmails ? error : maskQuotaText(error)}{' '}
             {!values && (
               <Button
                 variant="secondary"
@@ -176,6 +199,6 @@ export function SubscriptionRouting({ disabled }: { disabled: boolean }) {
           </div>
         )}
       </div>
-    </details>
+    </section>
   );
 }

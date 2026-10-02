@@ -1558,8 +1558,19 @@
       "note": "Percentages show remaining quota. Totals add the same limit across credentials; each account contributes 100%. Accounts can have different token allowances. Unknown quotas are not counted as empty."
     },
     "routing": {
-      "title": "Subscription priorities",
-      "description": "Earliest reset first sends new sessions to the available Claude or Codex account whose shared quota resets soonest. Refresh quota to provide current observations. Accounts with unknown resets use the fallback order; manual account priorities take precedence.",
+      "title": "Subscription switching",
+      "description": "Choose the automatic switching order. Earliest reset first uses available quota with the nearest reset date; refresh account quotas to provide current observations.",
+      "automatic": "Automatic",
+      "disabled_account": "disabled",
+      "missing_account": "Subscription unavailable or removed",
+      "preferred_account": "{{provider}}: subscription for new threads",
+      "last_selected": "Last selected",
+      "activity_unavailable": "Activity data unavailable",
+      "activity_loading": "Loading…",
+      "no_activity": "No requests since the server started",
+      "manual_hint": "Manual selection applies to new threads. With session affinity enabled, existing threads retain their account and cache. If the selected subscription is unavailable, automatic selection takes over.",
+      "activity_hint": "Shows the server's latest selection, not every active request. Parallel threads may use different subscriptions. Updates every 10 seconds.",
+      "ttl_hint": "How long an inactive binding is retained, for example 1h or 24h.",
       "affinity_hint": "Session affinity keeps a thread on its account to reuse the context cache. Existing bindings take precedence over reset order. An unavailable account can trigger failover. TTL is the idle binding lifetime, for example 1h or 24h.",
       "saved": "Routing settings saved.",
       "invalid_ttl": "Enter a positive duration, for example 1h, 30m, or 1h30m."
