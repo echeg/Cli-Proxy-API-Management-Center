@@ -81,6 +81,22 @@
   flex-shrink: 0;
 }
 
+.privacyAction {
+  padding: 9px 15px;
+  border: 1px solid var(--border-color);
+  border-radius: $radius-full;
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  &:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+}
+
 /* 墨色药丸主按钮（深色主题自动反相） */
 .primaryAction {
   display: inline-flex;

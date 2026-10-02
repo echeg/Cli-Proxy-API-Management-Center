@@ -1,10 +1,6 @@
-/**
- * 单卡额度操作：刷新 + Codex 重置积分。
- * 流程 1:1 移植旧 QuotaSection（confirm modal、resetting 再入守卫、
- * generation-guarded commit、成功/失败通知），仅把 config 换成 adapter。
- */
+/** Credential refresh and manual reset actions with session-scoped cache guards. */
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   captureQuotaCacheGeneration,
@@ -20,11 +16,21 @@ import { getQuotaMap, getQuotaSetter, type QuotaAdapter, type QuotaCardState } f
 const getQuotaState = (adapter: QuotaAdapter, file: AuthFileItem): QuotaCardState | undefined =>
   getQuotaMap(adapter)[getQuotaCacheKey(file)];
 
-export function useQuotaActions(disableControls: boolean) {
+const unchangedName = (name: string) => name;
+
+export function useQuotaActions(
+  disableControls: boolean,
+  displayNameFor: (name: string) => string = unchangedName
+) {
   const { t } = useTranslation();
   const showNotification = useNotificationStore((state) => state.showNotification);
   const showConfirmation = useNotificationStore((state) => state.showConfirmation);
   const [resettingQuotaName, setResettingQuotaName] = useState<string | null>(null);
+  const displayNameRef = useRef(displayNameFor);
+  useEffect(() => {
+    // Pending responses must use the current privacy choice when they finish.
+    displayNameRef.current = displayNameFor;
+  }, [displayNameFor]);
 
   const refreshQuota = useCallback(
     async (file: AuthFileItem, adapter: QuotaAdapter) => {
@@ -49,7 +55,10 @@ export function useQuotaActions(disableControls: boolean) {
             [cacheKey]: successState,
           }));
           void enrichQuotaInBackground(adapter, file, data, successState, t);
-          showNotification(t('auth_files.quota_refresh_success', { name: file.name }), 'success');
+          showNotification(
+            t('auth_files.quota_refresh_success', { name: displayNameRef.current(file.name) }),
+            'success'
+          );
         });
       } catch (err: unknown) {
         const message = err instanceof Error ? err.message : t('common.unknown_error');
@@ -60,7 +69,10 @@ export function useQuotaActions(disableControls: boolean) {
             [cacheKey]: adapter.buildErrorState(message, status),
           }));
           showNotification(
-            t('auth_files.quota_refresh_failed', { name: file.name, message }),
+            t('auth_files.quota_refresh_failed', {
+              name: displayNameRef.current(file.name),
+              message: displayNameRef.current(message),
+            }),
             'error'
           );
         });
@@ -80,7 +92,9 @@ export function useQuotaActions(disableControls: boolean) {
 
       showConfirmation({
         title: t('codex_quota.reset_confirm_title'),
-        message: t('codex_quota.reset_confirm_message', { name: file.name }),
+        message: t('codex_quota.reset_confirm_message', {
+          name: displayNameRef.current(file.name),
+        }),
         confirmText: t('codex_quota.reset_confirm_button'),
         variant: 'primary',
         onConfirm: async () => {
@@ -94,13 +108,19 @@ export function useQuotaActions(disableControls: boolean) {
                 ...prev,
                 [cacheKey]: adapter.buildSuccessState(data),
               }));
-              showNotification(t('codex_quota.reset_success', { name: file.name }), 'success');
+              showNotification(
+                t('codex_quota.reset_success', { name: displayNameRef.current(file.name) }),
+                'success'
+              );
             });
           } catch (err: unknown) {
             const message = err instanceof Error ? err.message : t('common.unknown_error');
             commitIfQuotaCacheCurrent(cacheGeneration, () => {
               showNotification(
-                t('codex_quota.reset_failed', { name: file.name, message }),
+                t('codex_quota.reset_failed', {
+                  name: displayNameRef.current(file.name),
+                  message: displayNameRef.current(message),
+                }),
                 'error'
               );
             });

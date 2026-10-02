@@ -1,6 +1,5 @@
 /**
- * 配置相关类型定义
- * 与基线 /config 返回结构保持一致（内部使用驼峰形式）
+ * Normalized configuration models exposed by the management API layer.
  */
 
 import type { GeminiKeyConfig, ProviderKeyConfig, OpenAIProviderConfig } from './provider';
@@ -23,6 +22,8 @@ export interface Config {
   wsAuth?: boolean;
   forceModelPrefix?: boolean;
   routingStrategy?: string;
+  routingSessionAffinity?: boolean;
+  routingSessionAffinityTTL?: string;
   apiKeys?: string[];
   geminiApiKeys?: GeminiKeyConfig[];
   interactionsApiKeys?: GeminiKeyConfig[];

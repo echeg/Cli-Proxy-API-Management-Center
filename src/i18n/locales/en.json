@@ -1387,6 +1387,7 @@
           "strategy_round_robin": "Round Robin",
           "strategy_weighted_round_robin": "Weighted Round Robin",
           "strategy_fill_first": "Fill First",
+          "strategy_earliest_reset": "Earliest reset first",
           "session_affinity_ttl": "Session Affinity TTL",
           "force_model_prefix": "Force Model Prefix",
           "force_model_prefix_desc": "Unprefixed model requests only use credentials without prefix",
@@ -1539,6 +1540,30 @@
     }
   },
   "quota_management": {
+    "ledger": {
+      "view_ledger": "Ledger",
+      "view_cards": "Cards",
+      "view_timeline": "Timeline",
+      "view_label": "Quota view",
+      "show_emails": "Show emails",
+      "hide_emails": "Hide emails",
+      "remaining": "Remaining quota",
+      "capacity": "of {{value}}%",
+      "reset_unknown": "Reset time unavailable",
+      "observed": "{{count}} of {{total}} quotas available",
+      "load_hint": "Refresh to load quota",
+      "more": "Show {{count}} more limits",
+      "less": "Show fewer limits",
+      "refresh_credential": "Refresh quota for {{name}}",
+      "note": "Percentages show remaining quota. Totals add the same limit across credentials; each account contributes 100%. Accounts can have different token allowances. Unknown quotas are not counted as empty."
+    },
+    "routing": {
+      "title": "Subscription priorities",
+      "description": "Earliest reset first sends new sessions to the available Claude or Codex account whose shared quota resets soonest. Refresh quota to provide current observations. Accounts with unknown resets use the fallback order; manual account priorities take precedence.",
+      "affinity_hint": "Session affinity keeps a thread on its account to reuse the context cache. Existing bindings take precedence over reset order. An unavailable account can trigger failover. TTL is the idle binding lifetime, for example 1h or 24h.",
+      "saved": "Routing settings saved.",
+      "invalid_ttl": "Enter a positive duration, for example 1h, 30m, or 1h30m."
+    },
     "search_label": "Search accounts",
     "search_placeholder": "Search by filename or email",
     "search_empty_title": "No matching accounts",

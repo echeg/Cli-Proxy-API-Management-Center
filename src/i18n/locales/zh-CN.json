@@ -1385,6 +1385,7 @@
           "strategy_round_robin": "轮询 (Round Robin)",
           "strategy_weighted_round_robin": "加权轮询 (Weighted Round Robin)",
           "strategy_fill_first": "填充优先 (Fill First)",
+          "strategy_earliest_reset": "优先使用最早重置的账户",
           "session_affinity_ttl": "会话粘性 TTL",
           "force_model_prefix": "强制模型前缀",
           "force_model_prefix_desc": "未带前缀的模型请求只使用无前缀凭据",
@@ -1537,6 +1538,30 @@
     }
   },
   "quota_management": {
+    "ledger": {
+      "view_ledger": "额度账本",
+      "view_cards": "卡片",
+      "view_timeline": "时间线",
+      "view_label": "额度视图",
+      "show_emails": "显示邮箱",
+      "hide_emails": "隐藏邮箱",
+      "remaining": "剩余额度",
+      "capacity": "总计 {{value}}%",
+      "reset_unknown": "重置时间未知",
+      "observed": "已获取 {{count}} / {{total}} 个额度",
+      "load_hint": "刷新以加载额度",
+      "more": "再显示 {{count}} 个限制",
+      "less": "收起限制",
+      "refresh_credential": "刷新 {{name}} 的额度",
+      "note": "百分比表示剩余额度。汇总同类限制，每个账户贡献 100%。各账户的实际令牌额度可能不同。未知额度不会被视为耗尽。"
+    },
+    "routing": {
+      "title": "订阅优先级",
+      "description": "将新会话分配给共享额度最早重置的可用 Claude 或 Codex 账户。刷新额度以提供最新数据。未知重置时间使用备用顺序；手动账户优先级始终优先。",
+      "affinity_hint": "会话亲和性将对话保留在同一账户以复用上下文缓存。现有绑定优先于重置顺序。账户不可用时可以切换。TTL 为闲置绑定的保留时间，例如 1h 或 24h。",
+      "saved": "路由设置已保存。",
+      "invalid_ttl": "请输入正数时长，例如 1h、30m 或 1h30m。"
+    },
     "search_label": "搜索账号",
     "search_placeholder": "按文件名或邮箱搜索",
     "search_empty_title": "没有匹配的账号",

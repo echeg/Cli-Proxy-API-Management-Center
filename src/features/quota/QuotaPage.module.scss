@@ -45,6 +45,20 @@
   min-width: 0;
 }
 
+.viewMode {
+  flex: 0 0 150px;
+  min-width: 130px;
+}
+
+@media (max-width: 700px) {
+  .tabsRow {
+    flex-wrap: wrap;
+  }
+  .viewMode {
+    margin-left: auto;
+  }
+}
+
 .search {
   position: relative;
   display: flex;

@@ -362,6 +362,9 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
   config.forceModelPrefix = normalizeBoolean(at('routing.force-model-prefix'));
   const strategy = at('routing.strategy');
   if (typeof strategy === 'string') config.routingStrategy = strategy;
+  config.routingSessionAffinity = normalizeBoolean(at('routing.session-affinity'));
+  const affinityTTL = at('routing.session-affinity-ttl');
+  if (typeof affinityTTL === 'string') config.routingSessionAffinityTTL = affinityTTL;
   const keys = at('access.api-keys');
   config.apiKeys = Array.isArray(keys)
     ? keys.filter((key): key is string => typeof key === 'string')

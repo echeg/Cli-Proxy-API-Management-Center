@@ -1411,6 +1411,7 @@
           "strategy_round_robin": "輪詢（Round Robin）",
           "strategy_weighted_round_robin": "加權輪詢（Weighted Round Robin）",
           "strategy_fill_first": "填充優先（Fill First）",
+          "strategy_earliest_reset": "優先使用最早重置的帳戶",
           "session_affinity_ttl": "會話黏性 TTL",
           "force_model_prefix": "強制模型前綴",
           "force_model_prefix_desc": "未帶前綴的模型請求只使用無前綴憑證",
@@ -1563,6 +1564,30 @@
     }
   },
   "quota_management": {
+    "ledger": {
+      "view_ledger": "額度帳本",
+      "view_cards": "卡片",
+      "view_timeline": "時間軸",
+      "view_label": "額度檢視",
+      "show_emails": "顯示信箱",
+      "hide_emails": "隱藏信箱",
+      "remaining": "剩餘額度",
+      "capacity": "總計 {{value}}%",
+      "reset_unknown": "重置時間未知",
+      "observed": "已取得 {{count}} / {{total}} 個額度",
+      "load_hint": "重新整理以載入額度",
+      "more": "再顯示 {{count}} 個限制",
+      "less": "收合限制",
+      "refresh_credential": "重新整理 {{name}} 的額度",
+      "note": "百分比表示剩餘額度。彙總同類限制，每個帳戶貢獻 100%。各帳戶的實際權杖額度可能不同。未知額度不會被視為耗盡。"
+    },
+    "routing": {
+      "title": "訂閱優先順序",
+      "description": "將新工作階段分配給共用額度最早重置的可用 Claude 或 Codex 帳戶。重新整理額度以提供最新資料。未知重置時間使用備用順序；手動帳戶優先順序始終優先。",
+      "affinity_hint": "工作階段親和性將對話保留在同一帳戶以重用上下文快取。現有綁定優先於重置順序。帳戶無法使用時可以切換。TTL 為閒置綁定的保留時間，例如 1h 或 24h。",
+      "saved": "路由設定已儲存。",
+      "invalid_ttl": "請輸入正數時長，例如 1h、30m 或 1h30m。"
+    },
     "search_label": "搜尋帳號",
     "search_placeholder": "依檔案名稱或電子郵件搜尋",
     "search_empty_title": "沒有符合的帳號",

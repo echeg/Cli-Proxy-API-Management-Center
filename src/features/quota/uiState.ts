@@ -1,14 +1,17 @@
 import {
   QUOTA_SORT_MODES,
   QUOTA_TAB_ORDER,
+  QUOTA_VIEW_MODES,
   type QuotaSortMode,
   type QuotaTabId,
+  type QuotaViewMode,
 } from './constants';
 
-/** 额度页 UI 偏好：会话级持久化（sessionStorage），跨会话不携带。 */
+/** Quota page preferences are scoped to the current browser session. */
 export type QuotaUiState = {
   tab?: QuotaTabId;
   sortMode?: QuotaSortMode;
+  viewMode?: QuotaViewMode;
 };
 
 const QUOTA_UI_STATE_KEY = 'quotaPage.uiState';
@@ -32,6 +35,9 @@ export const readQuotaUiState = (): QuotaUiState | null => {
     return {
       tab: isQuotaTabId(parsed.tab) ? parsed.tab : undefined,
       sortMode: isQuotaSortMode(parsed.sortMode) ? parsed.sortMode : undefined,
+      ...(QUOTA_VIEW_MODES.includes(parsed.viewMode as QuotaViewMode)
+        ? { viewMode: parsed.viewMode }
+        : {}),
     };
   } catch {
     return null;

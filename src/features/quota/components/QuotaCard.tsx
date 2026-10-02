@@ -1,10 +1,8 @@
 /**
- * 额度卡片：头部（提供商图标 + mono 文件名）+ 四态 body + 动作 footer。
+ * Quota card with provider identity, request status, and refresh/reset actions.
  *
- * - idle：整个 body 是一个点击加载按钮（上游直连有速率考虑，不自动拉取）；
- * - loading：双幽灵行骨架（aria-busy，文字等价视觉隐藏）；
- * - error：失败色条 + footer 刷新即重试；
- * - success：provider Body（穿 QuotaBody.module.scss 全页外衣）。
+ * Idle credentials load on demand. Loading uses accessible skeletons,
+ * errors expose retry, and successful observations use the provider body.
  */
 
 import { useState, type CSSProperties } from 'react';
@@ -26,7 +24,7 @@ import { useClaudeResetGrants } from '../providers/claude/ClaudeResetGrants';
 import bodyStyles from './QuotaBody.module.scss';
 import styles from './QuotaCard.module.scss';
 
-/** 额度页全页外衣：QuotaBody 模块绑定成类型化契约（缺键在模块初始化即抛）。 */
+/** Bind the provider body class contract when this module initializes. */
 const quotaClasses = bindQuotaClasses(bodyStyles, 'QuotaBody.module.scss');
 
 export type QuotaCardProps = {
@@ -35,10 +33,12 @@ export type QuotaCardProps = {
   resolvedTheme: ResolvedTheme;
   canRefresh: boolean;
   resetting: boolean;
-  /** 首屏级联入场延迟；null = 不入场（切 tab / 翻页 / 刷新新挂载的卡片）。 */
+  /** Initial entrance delay; null skips animation after navigation or refresh. */
   entranceDelayMs?: number | null;
   onRefresh: () => void;
   onReset: () => void;
+  displayName?: string;
+  formatDisplayText?: (text: string) => string;
 };
 
 export function QuotaCard(props: QuotaCardProps) {
@@ -55,9 +55,9 @@ export function QuotaCard(props: QuotaCardProps) {
   const { t } = useTranslation();
   const adapter = QUOTA_ADAPTERS[entry.type];
   const file = entry.file;
-  const displayName = getQuotaDisplayName(file);
+  const displayName = props.displayName ?? getQuotaDisplayName(file);
 
-  // 挂载时捕获一次延迟：后续 props 变 null 不影响本卡（React 19 禁渲染期读 ref）
+  // Capture the entrance delay on mount, without reading a ref during render.
   const [mountEntranceDelayMs] = useState<number | null>(entranceDelayMs ?? null);
   const entranceStyle =
     mountEntranceDelayMs === null
@@ -71,15 +71,17 @@ export function QuotaCard(props: QuotaCardProps) {
     entry.type === 'claude' && status !== 'idle',
     !canRefresh || loading || resetting,
     quota,
-    onRefresh
+    onRefresh,
+    displayName
   );
   const iconSrc = getAuthFileIcon(entry.type, resolvedTheme);
   const typeLabel = getTypeLabel(t, entry.type);
-  const errorMessage = resolveQuotaErrorMessage(
+  const rawErrorMessage = resolveQuotaErrorMessage(
     t,
     quota?.errorStatus,
     quota?.error || t('common.unknown_error')
   );
+  const errorMessage = props.formatDisplayText?.(rawErrorMessage) ?? rawErrorMessage;
   const showReset =
     status === 'success' &&
     Boolean(adapter.resetQuota) &&

@@ -1,6 +1,8 @@
-import { describe, expect, test } from 'bun:test';
+import { beforeAll, describe, expect, test } from 'bun:test';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { createInstance } from 'i18next';
+import { I18nextProvider } from 'react-i18next';
 import {
   readModelOptions,
   buildModelOptions,
@@ -9,6 +11,12 @@ import {
 import { ModelAdvancedFields } from '@/features/providers/sheets/forms/ModelAdvancedFields';
 import type { ModelEntryInput, ProviderBrand } from '@/features/providers/types';
 import type { ModelAlias } from '@/types';
+
+// This contract asserts translation keys, independently of other suites' locale.
+const fieldI18n = createInstance();
+beforeAll(async () => {
+  await fieldI18n.init({ lng: 'cimode', resources: {} });
+});
 
 const draft = (model: ModelAlias): ModelEntryInput => ({
   name: model.name,
@@ -174,13 +182,17 @@ describe('provider model options', () => {
 
   const render = (brand: ProviderBrand, disabled = false, enabled = true) =>
     renderToStaticMarkup(
-      createElement(ModelAdvancedFields, {
-        entry: { name: 'model', thinkingEnabled: enabled },
-        providerBrand: brand,
-        disabled,
-        supportsThinking: true,
-        onUpdate: () => {},
-      })
+      createElement(
+        I18nextProvider,
+        { i18n: fieldI18n },
+        createElement(ModelAdvancedFields, {
+          entry: { name: 'model', thinkingEnabled: enabled },
+          providerBrand: brand,
+          disabled,
+          supportsThinking: true,
+          onUpdate: () => {},
+        })
+      )
     );
 
   test('gates fields by provider capability', () => {
