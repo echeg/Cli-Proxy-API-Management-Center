@@ -363,6 +363,7 @@ export const normalizeConfigResponse = (raw: unknown): Config => {
   const strategy = at('routing.strategy');
   if (typeof strategy === 'string') config.routingStrategy = strategy;
   config.routingSessionAffinity = normalizeBoolean(at('routing.session-affinity'));
+  config.codexFastMode = normalizeBoolean(at('oauth.providers.codex.fast-mode')) ?? false;
   const affinityTTL = at('routing.session-affinity-ttl');
   if (typeof affinityTTL === 'string') config.routingSessionAffinityTTL = affinityTTL;
   const preferredAccounts = at('routing.preferred-accounts');

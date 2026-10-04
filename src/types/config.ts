@@ -25,6 +25,7 @@ export interface Config {
   routingSessionAffinity?: boolean;
   routingSessionAffinityTTL?: string;
   routingPreferredAccounts?: Record<string, string>;
+  codexFastMode?: boolean;
   apiKeys?: string[];
   geminiApiKeys?: GeminiKeyConfig[];
   interactionsApiKeys?: GeminiKeyConfig[];

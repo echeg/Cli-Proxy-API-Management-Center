@@ -1599,6 +1599,12 @@
       "saved": "路由設定已儲存。",
       "invalid_ttl": "請輸入正數時長，例如 1h、30m 或 1h30m。"
     },
+    "codex_fast": {
+      "title": "Codex 快速模式",
+      "on": "已開啟",
+      "off": "已關閉",
+      "description": "為支援的模型上的 Codex 訂閱請求申請優先服務層級（priority），與 Codex CLI 的 Fast 模式相同。回應更快，但訂閱額度消耗也更快。對新請求立即生效；用戶端指定的層級與 payload 規則優先。不影響 API 金鑰。"
+    },
     "search_label": "搜尋帳號",
     "search_placeholder": "依檔案名稱或電子郵件搜尋",
     "search_empty_title": "沒有符合的帳號",

@@ -25,6 +25,7 @@ import { QuotaHeader } from './components/QuotaHeader';
 import { QuotaCard } from './components/QuotaCard';
 import { QuotaTimeline } from './components/QuotaTimeline';
 import { QuotaLedger } from './components/QuotaLedger';
+import { CodexFastMode } from './components/CodexFastMode';
 import { SubscriptionRouting } from './components/SubscriptionRouting';
 import { maskQuotaName, maskQuotaText } from './ledgerModel';
 import {
@@ -340,6 +341,7 @@ export function QuotaPage() {
           files={filesGeneration === sessionGeneration ? files : []}
           showEmails={showEmails}
         />
+        <CodexFastMode key={`codex-fast-${sessionGeneration}`} disabled={disableControls} />
         {/* Keep provider navigation above the search and display sort controls. */}
         <div className={styles.tabsRow} data-reveal>
           <ProviderTabs

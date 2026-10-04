@@ -20,4 +20,10 @@ export const configApi = {
    */
   updateRequestLog: (enabled: boolean) =>
     apiClient.put('/config/observability/logs/request-log', enabled),
+
+  /**
+   * Codex Fast mode (priority service tier) for subscription requests
+   */
+  updateCodexFastMode: (enabled: boolean) =>
+    apiClient.put('/config/oauth/providers/codex/fast-mode', enabled),
 };
