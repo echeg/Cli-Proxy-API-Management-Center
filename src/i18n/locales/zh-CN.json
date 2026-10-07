@@ -1587,6 +1587,7 @@
     "title": "配额管理",
     "description": "集中查看 OAuth 额度与剩余情况",
     "refresh_all_credentials": "刷新全部凭证",
+    "last_refresh": "上次检查：{{time}}",
     "sort_label": "排序",
     "sort_default": "默认",
     "sort_soonest": "最快恢复优先",

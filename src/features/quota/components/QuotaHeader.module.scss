@@ -1,7 +1,7 @@
 @use '../../../styles/mixins' as *;
 
-/* 额度页头部：与凭证库/仪表盘同语汇（紧排标题 / ▍mono 遥测 / 墨色药丸）。
- * meta 行遥测语义：已加载数是「活数据」（绿），需关注数走失败色，其余中性。 */
+/* Match the credential library and dashboard: compact title, monospace counts, and pill action.
+ * Loaded counts use the success color; accounts needing attention use the failure color. */
 
 .header {
   display: flex;
@@ -40,7 +40,7 @@
   letter-spacing: 0.02em;
   color: var(--text-secondary);
 
-  /* 终端游标：结构记号，与凭证库 meta 行同语汇 */
+  /* Match the terminal cursor marker in the credential library metadata. */
   &::before {
     content: '▍';
     color: var(--viz-success);
@@ -72,13 +72,14 @@
   color: var(--viz-failure);
 }
 
-/* ---------- 动作区 ---------- */
+/* ---------- Actions ---------- */
 
 .actions {
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
+  max-width: 100%;
 }
 
 .privacyAction {
@@ -97,11 +98,12 @@
   }
 }
 
-/* 墨色药丸主按钮（深色主题自动反相） */
+/* Ink-colored pill action, with inverted colors in the dark theme. */
 .primaryAction {
   display: inline-flex;
   align-items: center;
   gap: 7px;
+  max-width: 100%;
   border: 0;
   cursor: pointer;
   background: var(--text-primary);
@@ -110,11 +112,15 @@
   padding: 10px 18px;
   font-size: 13.5px;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.3;
   transition:
     transform var(--dur-press, 160ms) var(--ease-out-strong, ease-out),
     background-color var(--dur-hover, 200ms) var(--ease-out-strong, ease-out),
     box-shadow var(--dur-hover, 200ms) var(--ease-out-strong, ease-out);
+
+  > svg {
+    flex-shrink: 0;
+  }
 
   &:disabled {
     cursor: not-allowed;
@@ -129,6 +135,20 @@
     outline: 2px solid var(--primary-color);
     outline-offset: 2px;
   }
+}
+
+.actionCopy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lastRefresh {
+  font-size: 11px;
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
 }
 
 @media (hover: hover) and (pointer: fine) {

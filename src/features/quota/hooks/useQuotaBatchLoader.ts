@@ -1,16 +1,11 @@
 /**
- * 混合提供商批量额度加载（原 useQuotaLoader 的跨分区泛化）。
- *
- * 保留的三道守卫与旧实现逐一对应：
- * - loadingRef：并发批量加载去重；
- * - requestIdRef：被超越的响应直接丢弃；
- * - cacheGeneration：断线重连后过期请求不得写入新会话缓存。
- * 提交按 provider 分组进行 —— 快的提供商先落地，不等慢的。
+ * Load quota across providers, committing faster providers first.
+ * Deduplicate batches within a session and discard superseded responses.
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { captureQuotaCacheGeneration, commitIfQuotaCacheCurrent } from '@/stores';
+import { captureQuotaCacheGeneration, commitIfQuotaCacheCurrent, useQuotaStore } from '@/stores';
 import { getStatusFromError } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import type { QuotaFileEntry } from '../logic';
@@ -30,16 +25,25 @@ interface BatchFetchResult {
 export function useQuotaBatchLoader() {
   const { t } = useTranslation();
   const [batchLoading, setBatchLoading] = useState(false);
-  const loadingRef = useRef(false);
+  const loadingGenerationRef = useRef<number | null>(null);
   const requestIdRef = useRef(0);
+
+  useEffect(
+    () => () => {
+      // A previous visit must not overwrite a newer visit's quota or timestamp.
+      requestIdRef.current += 1;
+      loadingGenerationRef.current = null;
+    },
+    []
+  );
 
   const loadQuota = useCallback(
     async (targets: QuotaFileEntry[]) => {
-      if (loadingRef.current) return;
-      if (targets.length === 0) return;
-      loadingRef.current = true;
-      const requestId = ++requestIdRef.current;
       const cacheGeneration = captureQuotaCacheGeneration();
+      if (loadingGenerationRef.current === cacheGeneration.cacheGeneration) return;
+      if (targets.length === 0) return;
+      loadingGenerationRef.current = cacheGeneration.cacheGeneration;
+      const requestId = ++requestIdRef.current;
       setBatchLoading(true);
 
       try {
@@ -115,10 +119,16 @@ export function useQuotaBatchLoader() {
             });
           })
         );
+        // Record completion, including per-credential errors, only for this session.
+        if (requestId === requestIdRef.current) {
+          commitIfQuotaCacheCurrent(cacheGeneration, () => {
+            useQuotaStore.getState().setLastRefreshAt(Date.now());
+          });
+        }
       } finally {
         if (requestId === requestIdRef.current) {
           setBatchLoading(false);
-          loadingRef.current = false;
+          loadingGenerationRef.current = null;
         }
       }
     },

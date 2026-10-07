@@ -37,6 +37,34 @@ describe('quota cache session isolation', () => {
     expect(committed).toBe(true);
   });
 
+  test('keeps the last completed refresh across file updates but resets it for a new session', () => {
+    const completedAt = Date.parse('2026-10-05T12:00:00Z');
+    useQuotaStore.getState().setLastRefreshAt(completedAt);
+    useQuotaStore.getState().clearQuotaCache(['a.json']);
+    expect(useQuotaStore.getState().lastRefreshAt).toBe(completedAt);
+
+    const pendingRefresh = captureQuotaCacheGeneration();
+    useQuotaStore.getState().clearQuotaCache();
+    expect(useQuotaStore.getState().lastRefreshAt).toBeNull();
+    expect(
+      commitIfQuotaCacheCurrent(pendingRefresh, () => {
+        useQuotaStore.getState().setLastRefreshAt(completedAt + 1000);
+      })
+    ).toBe(false);
+    expect(useQuotaStore.getState().lastRefreshAt).toBeNull();
+  });
+
+  test('does not report a full refresh when a credential was invalidated during the batch', () => {
+    const pendingRefresh = captureQuotaCacheGeneration();
+    useQuotaStore.getState().clearQuotaCache(['replaced.json']);
+    expect(
+      commitIfQuotaCacheCurrent(pendingRefresh, () => {
+        useQuotaStore.getState().setLastRefreshAt(Date.parse('2026-10-05T12:00:00Z'));
+      })
+    ).toBe(false);
+    expect(useQuotaStore.getState().lastRefreshAt).toBeNull();
+  });
+
   test('single-file invalidation preserves other credentials and their pending requests', () => {
     const target = { status: 'success' as const, windows: [] };
     const other = { status: 'loading' as const, windows: [] };

@@ -1,7 +1,7 @@
 /**
  * Quota page with provider navigation, ledger, cards, and timeline views.
  *
- * Preserve on-demand fetching, Devin's initial load, session isolation,
+ * Refresh all quotas on entry while preserving session isolation,
  * request deduplication, and pruning removed credentials from quota caches.
  * This page owns the header refresh slot and reloads credentials on refresh.
  */
@@ -40,7 +40,6 @@ import {
 } from './constants';
 import {
   buildTabCounts,
-  canRefreshQuotaAfterList,
   classifyQuotaFiles,
   filterEntriesByTab,
   filterEntriesBySearch,
@@ -51,7 +50,6 @@ import {
 import { nextRecoveryMs } from './resetSchedule';
 import { QUOTA_ADAPTERS, getQuotaSetter, type QuotaCardState } from './providers';
 import type { QuotaProviderType } from './providers/types';
-import { useDevinQuotaAutoLoad } from './providers/devin/useDevinQuotaAutoLoad';
 import { useQuotaActions } from './hooks/useQuotaActions';
 import { useQuotaBatchLoader } from './hooks/useQuotaBatchLoader';
 import { readQuotaUiState, writeQuotaUiState } from './uiState';
@@ -103,7 +101,7 @@ export function QuotaPage() {
       setFiles([]);
       setFilesGeneration(null);
       setLoading(false);
-      return;
+      return null;
     }
     const isCurrent = () =>
       requestId === listRequestRef.current &&
@@ -112,29 +110,24 @@ export function QuotaPage() {
     setError('');
     try {
       const data = await authFilesApi.list();
-      if (!isCurrent()) return;
-      setFiles(data?.files || []);
+      if (!isCurrent()) return null;
+      const loadedFiles = data?.files || [];
+      setFiles(loadedFiles);
       setFilesGeneration(sessionGeneration);
+      return loadedFiles;
     } catch (err: unknown) {
-      if (!isCurrent()) return;
+      if (!isCurrent()) return null;
       const message = err instanceof Error ? err.message : t('notification.refresh_failed');
       setError(message);
+      return null;
     } finally {
       if (isCurrent()) setLoading(false);
     }
   }, [connectionStatus, sessionGeneration, t]);
 
-  useHeaderRefresh(loadFiles);
-
-  useEffect(() => {
-    void loadFiles();
-    return () => {
-      listRequestRef.current += 1;
-    };
-  }, [loadFiles]);
-
   /* Quota caches provide the recovery instants used by display sorting. */
 
+  const lastRefreshAt = useQuotaStore((state) => state.lastRefreshAt);
   const antigravityQuota = useQuotaStore((state) => state.antigravityQuota);
   const claudeQuota = useQuotaStore((state) => state.claudeQuota);
   const codexQuota = useQuotaStore((state) => state.codexQuota);
@@ -165,8 +158,7 @@ export function QuotaPage() {
 
   /* Classification, filtering, display sorting, and pagination. */
 
-  // Subscribe to the clock only for recovery sorting to keep pageItems stable
-  // and avoid rerunning the refresh effect while using the default order.
+  // Subscribe to the clock only when recovery sorting needs it.
   const tick = useNow(sortMode !== 'default');
   const sortNow = sortMode === 'default' ? 0 : tick;
 
@@ -254,51 +246,43 @@ export function QuotaPage() {
     formatDisplayText
   );
 
-  const pendingRefreshRef = useRef<number | null>(null);
-  const prevLoadingRef = useRef(loading);
+  const refreshRef = useRef<{ generation: number; promise: Promise<void> } | null>(null);
 
-  // Refresh the credential list before loading quota for the current page.
+  // Coalesce the entire refresh so another click cannot replace its credential list.
   const handleRefreshAll = useCallback(() => {
-    if (disableControls) return;
-    pendingRefreshRef.current = sessionGeneration;
-    void loadFiles();
-  }, [disableControls, loadFiles, sessionGeneration]);
+    if (refreshRef.current?.generation === sessionGeneration) {
+      return refreshRef.current.promise;
+    }
+    const pending = {
+      generation: sessionGeneration,
+      promise: (async () => {
+        const loadedFiles = await loadFiles();
+        if (
+          loadedFiles === null ||
+          sessionGeneration !== useQuotaStore.getState().cacheGeneration
+        ) {
+          return;
+        }
+        // Refresh all credentials, independent of filters and pagination.
+        await loadQuota(classifyQuotaFiles(loadedFiles));
+      })(),
+    };
+    refreshRef.current = pending;
+    pending.promise = pending.promise.finally(() => {
+      if (refreshRef.current === pending) refreshRef.current = null;
+    });
+    return pending.promise;
+  }, [loadFiles, loadQuota, sessionGeneration]);
+
+  useHeaderRefresh(handleRefreshAll);
 
   useEffect(() => {
-    const wasLoading = prevLoadingRef.current;
-    prevLoadingRef.current = loading;
-
-    const requestedSession = pendingRefreshRef.current;
-    if (requestedSession === null) return;
-    if (requestedSession !== sessionGeneration) {
-      pendingRefreshRef.current = null;
-      return;
-    }
-    if (loading || !wasLoading) return;
-
-    pendingRefreshRef.current = null;
-    if (
-      canRefreshQuotaAfterList(
-        requestedSession,
-        sessionGeneration,
-        filesGeneration,
-        Boolean(error),
-        disableControls
-      )
-    ) {
-      void loadQuota(pageItems);
-    }
-  }, [disableControls, error, filesGeneration, loading, loadQuota, pageItems, sessionGeneration]);
-
-  useDevinQuotaAutoLoad(
-    pageItems,
-    disableControls ||
-      loading ||
-      batchLoading ||
-      Boolean(error) ||
-      filesGeneration !== sessionGeneration,
-    loadQuota
-  );
+    void handleRefreshAll();
+    return () => {
+      listRequestRef.current += 1;
+      refreshRef.current = null;
+    };
+  }, [handleRefreshAll]);
 
   const canUseActions = !disableControls && !loading && filesGeneration === sessionGeneration;
 
@@ -328,6 +312,7 @@ export function QuotaPage() {
         loadedCount={loadedCount}
         attentionCount={attentionCount}
         refreshing={loading || batchLoading}
+        lastRefreshAt={lastRefreshAt}
         disableControls={disableControls}
         onRefreshAll={handleRefreshAll}
         showEmails={showEmails}

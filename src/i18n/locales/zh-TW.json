@@ -1613,6 +1613,7 @@
     "title": "配額管理",
     "description": "集中查看 OAuth 配額與剩餘情況",
     "refresh_all_credentials": "重新整理全部憑證",
+    "last_refresh": "上次檢查：{{time}}",
     "sort_label": "排序",
     "sort_default": "預設",
     "sort_soonest": "最快恢復優先",

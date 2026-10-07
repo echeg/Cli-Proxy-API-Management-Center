@@ -18,6 +18,8 @@ type QuotaUpdater<T> = T | ((prev: T) => T);
 
 interface QuotaStoreState {
   cacheGeneration: number;
+  lastRefreshAt: number | null;
+  setLastRefreshAt: (timestamp: number) => void;
   fileGenerations: Record<string, number>;
   antigravityQuota: Record<string, AntigravityQuotaState>;
   claudeQuota: Record<string, ClaudeQuotaState>;
@@ -45,6 +47,8 @@ const resolveUpdater = <T>(updater: QuotaUpdater<T>, prev: T): T => {
 
 export const useQuotaStore = create<QuotaStoreState>((set) => ({
   cacheGeneration: 0,
+  lastRefreshAt: null,
+  setLastRefreshAt: (lastRefreshAt) => set({ lastRefreshAt }),
   fileGenerations: {},
   antigravityQuota: {},
   claudeQuota: {},
@@ -110,6 +114,7 @@ export const useQuotaStore = create<QuotaStoreState>((set) => ({
       }
       return {
         cacheGeneration: state.cacheGeneration + 1,
+        lastRefreshAt: null,
         fileGenerations: {},
         antigravityQuota: {},
         claudeQuota: {},

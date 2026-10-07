@@ -8,6 +8,7 @@ export type QuotaHeaderProps = {
   loadedCount: number;
   attentionCount: number;
   refreshing: boolean;
+  lastRefreshAt?: number | null;
   disableControls: boolean;
   onRefreshAll: () => void;
   showEmails?: boolean;
@@ -24,14 +25,19 @@ export function QuotaHeader(props: QuotaHeaderProps) {
     loadedCount,
     attentionCount,
     refreshing,
+    lastRefreshAt,
     disableControls,
     onRefreshAll,
     showEmails,
     onToggleEmails,
   } = props;
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   // Animate the loaded count as batches finish.
   const displayLoadedCount = useCountUp(loadedCount);
+  const lastRefreshDate = lastRefreshAt == null ? null : new Date(lastRefreshAt);
+  const validLastRefresh =
+    lastRefreshDate && Number.isFinite(lastRefreshDate.getTime()) ? lastRefreshDate : null;
+  const locale = i18n.resolvedLanguage ?? i18n.language;
 
   return (
     <header className={styles.header}>
@@ -81,9 +87,29 @@ export function QuotaHeader(props: QuotaHeaderProps) {
           className={styles.primaryAction}
           onClick={onRefreshAll}
           disabled={disableControls || refreshing}
+          aria-busy={refreshing}
         >
           <IconRefreshCw size={14} className={refreshing ? styles.spinning : undefined} />
-          {t('quota_management.refresh_all_credentials')}
+          <span className={styles.actionCopy}>
+            <span>{t('quota_management.refresh_all_credentials')}</span>
+            {validLastRefresh && (
+              <time
+                className={styles.lastRefresh}
+                dateTime={validLastRefresh.toISOString()}
+                title={validLastRefresh.toLocaleString(locale, {
+                  dateStyle: 'full',
+                  timeStyle: 'long',
+                })}
+              >
+                {t('quota_management.last_refresh', {
+                  time: validLastRefresh.toLocaleString(locale, {
+                    dateStyle: 'short',
+                    timeStyle: 'medium',
+                  }),
+                })}
+              </time>
+            )}
+          </span>
         </button>
       </div>
     </header>
