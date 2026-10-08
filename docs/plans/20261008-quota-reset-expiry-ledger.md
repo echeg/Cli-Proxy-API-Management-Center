@@ -164,14 +164,14 @@
 - [x] run `bun test tests/claudeClaimCooldown.test.ts tests/claudeResetGrants.test.ts` and `bun run verify` - must pass before task 5
 
 ### Task 5: Codex — reusable reset execution without the modal
-- [ ] write failing tests in `tests/quotaResetExecution.test.ts` for a new plain helper `executeQuotaReset(deps)` (`src/features/quota/hooks/quotaReset.ts`), using injected `resetQuotaFn`, `setQuota`, `notify`, and the cache-generation functions:
+- [x] write failing tests in `tests/quotaResetExecution.test.ts` for a new plain helper `executeQuotaReset(deps)` (`src/features/quota/hooks/quotaReset.ts`), using injected `resetQuotaFn`, `setQuota`, `notify`, and the cache-generation functions:
   - success commits `adapter.buildSuccessState(data)` under the cache key and notifies `codex_quota.reset_success`
   - a failure notifies `codex_quota.reset_failed` and commits no state
   - a stale cache generation commits nothing and shows no notification
   - the resetting key is set during the call and cleared in `finally`
-- [ ] implement the helper. In `useQuotaActions` (`src/features/quota/hooks/useQuotaActions.ts`), keep `resetQuota` (with `showConfirmation`) calling the helper from `onConfirm`. Add and return a modal-free `performReset(file, adapter)` that applies the same guards (`disableControls`, `file.disabled`, loading, already resetting) and then calls the helper.
-- [ ] add a source-contract test that `QuotaPage.tsx` still passes `resetQuota` to `QuotaCard` (`onReset`), so Cards keep the modal
-- [ ] run `bun test tests/quotaResetExecution.test.ts tests/codexQuotaReset.test.ts` and `bun run verify` - must pass before task 6
+- [x] implement the helper. In `useQuotaActions` (`src/features/quota/hooks/useQuotaActions.ts`), keep `resetQuota` (with `showConfirmation`) calling the helper from `onConfirm`. Add and return a modal-free `performReset(file, adapter)` that applies the same guards (`disableControls`, `file.disabled`, loading, already resetting) and then calls the helper.
+- [x] add a source-contract test that `QuotaPage.tsx` still passes `resetQuota` to `QuotaCard` (`onReset`), so Cards keep the modal
+- [x] run `bun test tests/quotaResetExecution.test.ts tests/codexQuotaReset.test.ts` and `bun run verify` - must pass before task 6
 
 ### Task 6: Ledger chip and resets drawer (display)
 - [ ] write failing SSR tests in `tests/quotaLedgerResets.test.ts`, rendering `QuotaLedger` with the new `now` prop and a stub `quotaFor`, plus far-future fixtures:

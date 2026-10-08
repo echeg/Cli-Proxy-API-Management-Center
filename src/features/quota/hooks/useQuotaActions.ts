@@ -11,6 +11,7 @@ import type { AuthFileItem } from '@/types';
 import { getStatusFromError } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { enrichQuotaInBackground } from '../quotaEnrichment';
+import { executeQuotaReset } from './quotaReset';
 import { getQuotaMap, getQuotaSetter, type QuotaAdapter, type QuotaCardState } from '../providers';
 
 const getQuotaState = (adapter: QuotaAdapter, file: AuthFileItem): QuotaCardState | undefined =>
@@ -81,14 +82,44 @@ export function useQuotaActions(
     [disableControls, resettingQuotaName, showNotification, t]
   );
 
-  const resetQuota = useCallback(
+  // Shared guards: returns the reset call only when this credential may spend a reset now.
+  const resetFnFor = useCallback(
     (file: AuthFileItem, adapter: QuotaAdapter) => {
       const resetQuotaFn = adapter.resetQuota;
+      if (!resetQuotaFn) return null;
+      if (disableControls || file.disabled) return null;
+      if (getQuotaState(adapter, file)?.status === 'loading') return null;
+      if (resettingQuotaName === getQuotaCacheKey(file)) return null;
+      return resetQuotaFn;
+    },
+    [disableControls, resettingQuotaName]
+  );
+
+  const runReset = useCallback(
+    (
+      file: AuthFileItem,
+      adapter: QuotaAdapter,
+      resetQuotaFn: NonNullable<QuotaAdapter['resetQuota']>
+    ) =>
+      executeQuotaReset({
+        file,
+        adapter,
+        resetQuotaFn,
+        setQuota: getQuotaSetter(adapter),
+        setResetting: setResettingQuotaName,
+        notify: showNotification,
+        t,
+        displayName: (name) => displayNameRef.current(name),
+        captureGeneration: captureQuotaCacheGeneration,
+        commitIfCurrent: commitIfQuotaCacheCurrent,
+      }),
+    [showNotification, t]
+  );
+
+  const resetQuota = useCallback(
+    (file: AuthFileItem, adapter: QuotaAdapter) => {
+      const resetQuotaFn = resetFnFor(file, adapter);
       if (!resetQuotaFn) return;
-      if (disableControls || file.disabled) return;
-      const cacheKey = getQuotaCacheKey(file);
-      if (getQuotaState(adapter, file)?.status === 'loading') return;
-      if (resettingQuotaName === cacheKey) return;
 
       showConfirmation({
         title: t('codex_quota.reset_confirm_title'),
@@ -98,40 +129,22 @@ export function useQuotaActions(
         confirmText: t('codex_quota.reset_confirm_button'),
         variant: 'primary',
         onConfirm: async () => {
-          const cacheGeneration = captureQuotaCacheGeneration(file.name);
-          const setQuota = getQuotaSetter(adapter);
-          setResettingQuotaName(cacheKey);
-          try {
-            const data = await resetQuotaFn(file, t);
-            commitIfQuotaCacheCurrent(cacheGeneration, () => {
-              setQuota((prev) => ({
-                ...prev,
-                [cacheKey]: adapter.buildSuccessState(data),
-              }));
-              showNotification(
-                t('codex_quota.reset_success', { name: displayNameRef.current(file.name) }),
-                'success'
-              );
-            });
-          } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : t('common.unknown_error');
-            commitIfQuotaCacheCurrent(cacheGeneration, () => {
-              showNotification(
-                t('codex_quota.reset_failed', {
-                  name: displayNameRef.current(file.name),
-                  message: displayNameRef.current(message),
-                }),
-                'error'
-              );
-            });
-          } finally {
-            setResettingQuotaName((current) => (current === cacheKey ? null : current));
-          }
+          await runReset(file, adapter, resetQuotaFn);
         },
       });
     },
-    [disableControls, resettingQuotaName, showConfirmation, showNotification, t]
+    [resetFnFor, runReset, showConfirmation, t]
   );
 
-  return { resettingQuotaName, refreshQuota, resetQuota };
+  /** Inline (Ledger) variant: the caller already collected confirmation. */
+  const performReset = useCallback(
+    async (file: AuthFileItem, adapter: QuotaAdapter): Promise<boolean> => {
+      const resetQuotaFn = resetFnFor(file, adapter);
+      if (!resetQuotaFn) return false;
+      return runReset(file, adapter, resetQuotaFn);
+    },
+    [resetFnFor, runReset]
+  );
+
+  return { resettingQuotaName, refreshQuota, resetQuota, performReset };
 }
