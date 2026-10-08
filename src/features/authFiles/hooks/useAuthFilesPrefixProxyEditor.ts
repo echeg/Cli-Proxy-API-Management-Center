@@ -7,6 +7,14 @@ import {
   type CredentialPolicyField,
   type CredentialPolicyValue,
 } from '@/features/authFiles/credentialPolicy';
+import {
+  buildQuotaReservePatch,
+  quotaReserveError,
+  readQuotaReserveDraft,
+  supportsQuotaReserve,
+  type QuotaReserveDraft,
+  type QuotaReserveError,
+} from '@/features/authFiles/quotaReserve';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { apiClient, authFilesApi, type AuthFileFieldsPatch } from '@/services/api';
@@ -39,7 +47,7 @@ type AuthFileHeadersErrorKey =
 type AuthFileContentErrorKey =
   'auth_files.prefix_proxy_invalid_json' | 'auth_files.prefix_proxy_html_challenge';
 type AuthFileWeightErrorKey = 'auth_files.weight_invalid_integer' | 'auth_files.weight_invalid_max';
-type AuthFileEditorErrorKey = AuthFileHeadersErrorKey | AuthFileWeightErrorKey;
+type AuthFileEditorErrorKey = AuthFileHeadersErrorKey | AuthFileWeightErrorKey | QuotaReserveError;
 
 export type PrefixProxyEditorField =
   | CredentialPolicyField
@@ -52,12 +60,16 @@ export type PrefixProxyEditorField =
   | 'usingApi'
   | 'note'
   | 'excludedModelsText'
-  | 'headersText';
+  | 'headersText'
+  | 'quotaReserve';
 
-export type PrefixProxyEditorFieldValue = string | boolean | CredentialPolicyValue;
+export type PrefixProxyEditorFieldValue =
+  string | boolean | CredentialPolicyValue | Partial<QuotaReserveDraft>;
 
 export type PrefixProxyEditorState = {
   policy?: CredentialPolicyDraft;
+  /** Set only for providers that support a quota reserve (codex/claude). */
+  quotaReserve?: QuotaReserveDraft;
   fileName: string;
   fileInfoText: string;
   loading: boolean;
@@ -388,6 +400,14 @@ export const buildAuthFileFieldsPatch = (
     }
   }
 
+  if (supportsQuotaReserve(editor.providerKey)) {
+    const reserveError = quotaReserveError(editor.quotaReserve);
+    if (reserveError) {
+      throw new Error(resolveError(reserveError));
+    }
+    Object.assign(patch, buildQuotaReservePatch(original, editor.quotaReserve, editor.providerKey));
+  }
+
   Object.assign(patch, buildCredentialPolicyPatch(original, editor.policy));
   return patch;
 };
@@ -452,6 +472,12 @@ const buildPrefixProxyUpdatedText = (
     next['excluded-models'] = patch['excluded-models'];
   }
 
+  if (patch.quota_reserve === null) {
+    delete next.quota_reserve;
+  } else if (patch.quota_reserve !== undefined) {
+    next.quota_reserve = patch.quota_reserve;
+  }
+
   applyCredentialPolicyPatch(next, patch);
   applyHeadersPatch(next, patch.headers);
 
@@ -480,7 +506,8 @@ export function useAuthFilesPrefixProxyEditor(
   const hasBlockingValidationError = Boolean(
     (prefixProxyEditor?.headersTouched && prefixProxyEditor.headersError) ||
     prefixProxyEditor?.weightError ||
-    credentialPolicyError(prefixProxyEditor?.policy)
+    credentialPolicyError(prefixProxyEditor?.policy) ||
+    quotaReserveError(prefixProxyEditor?.quotaReserve)
   );
   const prefixProxyUpdatedText =
     prefixProxyEditor && !hasBlockingValidationError
@@ -493,7 +520,9 @@ export function useAuthFilesPrefixProxyEditor(
       : null;
 
   const prefixProxyDirty =
-    hasKeys(prefixProxyPatch) || Boolean(credentialPolicyError(prefixProxyEditor?.policy));
+    hasKeys(prefixProxyPatch) ||
+    Boolean(credentialPolicyError(prefixProxyEditor?.policy)) ||
+    Boolean(quotaReserveError(prefixProxyEditor?.quotaReserve));
 
   const closePrefixProxyEditor = () => {
     editorRequestRef.current += 1;
@@ -611,6 +640,9 @@ export function useAuthFilesPrefixProxyEditor(
           invalidContentPreview: '',
           json,
           policy: readCredentialPolicy(json),
+          quotaReserve: supportsQuotaReserve(providerKey)
+            ? readQuotaReserveDraft(json, file.quotaReserve)
+            : undefined,
           providerKey,
           prefix,
           proxyUrl,
@@ -658,6 +690,17 @@ export function useAuthFilesPrefixProxyEditor(
             ...policy,
             [field]: value,
             touched: { ...policy.touched, [field]: true },
+          },
+        };
+      }
+      if (field === 'quotaReserve') {
+        if (!prev.quotaReserve || !value || typeof value !== 'object') return prev;
+        return {
+          ...prev,
+          quotaReserve: {
+            ...prev.quotaReserve,
+            ...(value as Partial<QuotaReserveDraft>),
+            touched: true,
           },
         };
       }

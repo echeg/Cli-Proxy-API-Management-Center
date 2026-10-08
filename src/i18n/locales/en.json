@@ -388,6 +388,17 @@
     "priority_label": "Priority (priority)",
     "priority_placeholder": "e.g. 10 or -1",
     "priority_hint": "Integers only. Invalid values are ignored. Larger value means higher priority.",
+    "reserve": {
+      "label": "Reserve quota for external services",
+      "hint": "Keeps part of every subscription window for tools that use this account outside the proxy.",
+      "percent_label": "Reserved share (%)",
+      "percent_invalid": "Enter a whole number from 1 to 99.",
+      "mode_label": "When the reserve is reached",
+      "mode_soft": "Soft: last resort only",
+      "mode_hard": "Hard: stop new sessions",
+      "mode_soft_hint": "Below the reserve, the proxy starts new sessions on this account only when no other account is available. Running sessions continue.",
+      "mode_hard_hint": "Below the reserve, the proxy won't start new sessions on this account until the window resets. Running sessions continue."
+    },
     "weight_label": "Scheduling weight (weight)",
     "weight_tooltip": "Defaults to 1. Values at or below 0 exclude this credential from weighted scheduling; maximum 1,000,000. After entering a value, enable weighted round robin for it to take effect.",
     "weight_hint": "Defaults to 1. Values at or below 0 exclude this credential from weighted scheduling; maximum 1,000,000. After entering a value, enable <settingsLink>weighted round robin</settingsLink> for it to take effect.",

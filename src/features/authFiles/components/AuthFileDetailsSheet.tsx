@@ -19,7 +19,9 @@ import {
 import { MAX_CREDENTIAL_WEIGHT } from '@/utils/credentialWeight';
 import { AuthFileExcludedModelsField } from './AuthFileExcludedModelsField';
 import { AuthFilePolicyFields } from './AuthFilePolicyFields';
+import { AuthFileQuotaReserveField } from './AuthFileQuotaReserveField';
 import { credentialPolicyError, readCredentialPolicy } from '../credentialPolicy';
+import { quotaReserveError } from '../quotaReserve';
 import styles from './AuthFileDetailsSheet.module.scss';
 
 /** API 边界归一化补写的派生字段——INFO 视图里只展示后端原始形状，避免重复噪音。 */
@@ -156,7 +158,8 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
               !editor?.json ||
               Boolean(editor?.headersTouched && editor.headersError) ||
               Boolean(editor?.weightError) ||
-              Boolean(credentialPolicyError(editor?.policy))
+              Boolean(credentialPolicyError(editor?.policy)) ||
+              Boolean(quotaReserveError(editor?.quotaReserve))
             }
           >
             {t('common.save')}
@@ -212,6 +215,12 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
                     hint={t('auth_files.priority_hint')}
                     disabled={disableControls || editor.saving || !editor.json}
                     onChange={(e) => onChange('priority', e.target.value)}
+                  />
+                  <AuthFileQuotaReserveField
+                    providerKey={editor.providerKey}
+                    draft={editor.quotaReserve}
+                    disabled={disableControls || editor.saving || !editor.json}
+                    onChange={(value) => onChange('quotaReserve', value)}
                   />
                   <Input
                     label={t('auth_files.weight_label')}

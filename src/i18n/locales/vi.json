@@ -340,6 +340,17 @@
     "priority_label": "Ưu tiên (priority)",
     "priority_placeholder": "ví dụ 10 hoặc -1",
     "priority_hint": "Chỉ nhận số nguyên. Giá trị không hợp lệ sẽ bị bỏ qua. Giá trị lớn hơn nghĩa là ưu tiên cao hơn.",
+    "reserve": {
+      "label": "Dành quota cho dịch vụ bên ngoài",
+      "hint": "Giữ lại một phần của mỗi cửa sổ gói thuê bao cho các công cụ dùng tài khoản này bên ngoài proxy.",
+      "percent_label": "Phần dành riêng (%)",
+      "percent_invalid": "Nhập số nguyên từ 1 đến 99.",
+      "mode_label": "Khi chạm mức dành riêng",
+      "mode_soft": "Mềm: chỉ dùng khi không còn lựa chọn",
+      "mode_hard": "Cứng: dừng phiên mới",
+      "mode_soft_hint": "Dưới mức dành riêng, proxy chỉ mở phiên mới trên tài khoản này khi không còn tài khoản nào khác. Các phiên đang chạy vẫn tiếp tục.",
+      "mode_hard_hint": "Dưới mức dành riêng, proxy không mở phiên mới trên tài khoản này cho đến khi cửa sổ được đặt lại. Các phiên đang chạy vẫn tiếp tục."
+    },
     "weight_label": "Trọng số điều phối (weight)",
     "weight_hint": "Mặc định là 1. Giá trị ≤ 0 sẽ loại credential này khỏi điều phối có trọng số; tối đa 1.000.000.",
     "weight_invalid_integer": "Trọng số phải là số nguyên.",

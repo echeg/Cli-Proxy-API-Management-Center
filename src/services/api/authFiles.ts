@@ -48,6 +48,8 @@ export type AuthFileFieldsPatch = {
   excluded_models?: string[];
   'excluded-models'?: string[];
   expired?: string;
+  /** codex/claude only; null deletes the reserve. */
+  quota_reserve?: AuthFileQuotaReserve | null;
 };
 type AuthFileBatchFailure = { name: string; error: string };
 type AuthFileBatchUploadResponse = {
@@ -242,7 +244,7 @@ const readIntegerField = (value: unknown): number | undefined => {
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 };
 
-const readQuotaReserve = (value: unknown): AuthFileQuotaReserve | undefined => {
+export const parseAuthFileQuotaReserve = (value: unknown): AuthFileQuotaReserve | undefined => {
   if (!isRecord(value)) return undefined;
   const percent = readIntegerField(value.percent);
   if (percent === undefined || percent < 1 || percent > 99) return undefined;
@@ -253,7 +255,7 @@ const readQuotaReserve = (value: unknown): AuthFileQuotaReserve | undefined => {
 
 /** The selector's verdict is only meaningful next to a configured reserve. */
 const readQuotaReserveFields = (entry: AuthFileEntry) => {
-  const quotaReserve = readQuotaReserve(entry['quota_reserve']);
+  const quotaReserve = parseAuthFileQuotaReserve(entry['quota_reserve']);
   if (!quotaReserve) {
     return { quotaReserve: undefined, quotaReserveActive: undefined, quotaReserveUntil: undefined };
   }

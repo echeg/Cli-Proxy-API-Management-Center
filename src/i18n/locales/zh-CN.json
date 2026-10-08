@@ -386,6 +386,17 @@
     "priority_label": "优先级（priority）",
     "priority_placeholder": "例如: 10 或 -1",
     "priority_hint": "仅支持整数；非法值会被忽略。数值越大优先级越高。",
+    "reserve": {
+      "label": "为外部服务预留配额",
+      "hint": "为在代理之外使用此账号的工具保留每个订阅窗口的一部分。",
+      "percent_label": "预留比例（%）",
+      "percent_invalid": "请输入 1 到 99 之间的整数。",
+      "mode_label": "达到预留时",
+      "mode_soft": "软：仅作为最后选择",
+      "mode_hard": "硬：停止新会话",
+      "mode_soft_hint": "低于预留时，仅当没有其他可用账号时，代理才会在此账号上开启新会话。进行中的会话不受影响。",
+      "mode_hard_hint": "低于预留时，代理在窗口重置前不会在此账号上开启新会话。进行中的会话不受影响。"
+    },
     "weight_label": "调度权重（weight）",
     "weight_tooltip": "默认值为 1；小于或等于 0 时不参与加权调度；最大值为 1,000,000。填入后打开加权轮询设置即可生效。",
     "weight_hint": "默认值为 1；小于或等于 0 时不参与加权调度；最大值为 1,000,000。填入后打开<settingsLink>加权轮询设置</settingsLink>即可生效。",

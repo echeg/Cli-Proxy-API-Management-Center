@@ -233,16 +233,17 @@
 - [x] ➕ the normalization lives in `normalizeAuthFileEntry` (`src/services/api/authFiles.ts`), where credential entries are actually normalized, not in `transformers.ts`. A missing `mode` defaults to `soft` (the backend default); a verdict without a valid reserve is dropped. The badge and tick carry `data-reserve-badge` / `data-reserve-tick` (+ `data-tone="warn"` when active), since CSS-module class names are `undefined` under SSR. An active reserve without `quota_reserve_until` reads "Held · hard". The tick sits in a `.meter` wrapper only when a reserve is set, so summary meters keep their DOM.
 
 ### Task 9: Quota reserve — Auth Files editor
-- [ ] write failing tests for the editor's patch building in `useAuthFilesPrefixProxyEditor.ts` (extract a pure `buildQuotaReservePatch(original, editor)` if needed, tested in `tests/authFilesQuotaReserve.test.ts`):
+- [x] write failing tests for the editor's patch building in `useAuthFilesPrefixProxyEditor.ts` (extract a pure `buildQuotaReservePatch(original, editor)` if needed, tested in `tests/authFilesQuotaReserve.test.ts`):
   - enabling → `quota_reserve: { percent, mode }`
   - disabling an existing reserve → `quota_reserve: null`
   - unchanged → no key
   - percent outside 1-99 or non-integer → validation error, no request
   - non-codex/claude credentials → field hidden and never sent
-- [ ] add editor state (`quotaReserveEnabled`, `quotaReservePercent`, `quotaReserveMode`) initialized from `file.quotaReserve`, and include the patch in the existing `PATCH /v8/management/credentials/fields` save path (`src/services/api/authFiles.ts`)
-- [ ] render the controls in `AuthFileDetailsSheet.tsx` next to the priority field, only for codex/claude: toggle "Reserve quota for external services", number input (1-99 %), a soft/hard select with hint text explaining new-sessions-only behavior. Use the existing form components. Show a backend 400 as the existing error notification. Add the `auth_files.reserve.*` keys in all five locales.
-- [ ] write an SSR or source-contract test that the controls render for codex/claude and are absent for other providers
-- [ ] run `bun test tests/authFilesQuotaReserve.test.ts` and `bun run verify` - must pass before task 10
+- [x] add editor state (`quotaReserveEnabled`, `quotaReservePercent`, `quotaReserveMode`) initialized from `file.quotaReserve`, and include the patch in the existing `PATCH /v8/management/credentials/fields` save path (`src/services/api/authFiles.ts`)
+- [x] render the controls in `AuthFileDetailsSheet.tsx` next to the priority field, only for codex/claude: toggle "Reserve quota for external services", number input (1-99 %), a soft/hard select with hint text explaining new-sessions-only behavior. Use the existing form components. Show a backend 400 as the existing error notification. Add the `auth_files.reserve.*` keys in all five locales.
+- [x] write an SSR or source-contract test that the controls render for codex/claude and are absent for other providers
+- [x] run `bun test tests/authFilesQuotaReserve.test.ts` and `bun run verify` - must pass before task 10
+- [x] ➕ the pure model lives in `src/features/authFiles/quotaReserve.ts` (`supportsQuotaReserve`, `readQuotaReserveDraft`, `quotaReserveError`, `buildQuotaReservePatch`); controls are `AuthFileQuotaReserveField.tsx`. Editor state is one optional `quotaReserve` draft (`{ enabled, percent, mode, touched }`, set only for codex/claude) instead of three flat fields, mirroring the optional `policy` draft. The draft reads the auth JSON's `quota_reserve` first (the backend stores it there, like `priority`) and falls back to `file.quotaReserve`; the API parser is exported as `parseAuthFileQuotaReserve`. Disabling a stored (even invalid) reserve sends `null`. Translations landed in all six locales, including `ko`.
 
 ### Task 10: Verify acceptance criteria
 - [ ] verify every Overview requirement:

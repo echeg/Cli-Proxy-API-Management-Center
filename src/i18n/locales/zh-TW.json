@@ -386,6 +386,17 @@
     "priority_label": "優先順序（priority）",
     "priority_placeholder": "例如: 10 或 -1",
     "priority_hint": "僅支援整數；無效值會被忽略。數值越大優先順序越高。",
+    "reserve": {
+      "label": "為外部服務預留配額",
+      "hint": "為在代理之外使用此帳號的工具保留每個訂閱視窗的一部分。",
+      "percent_label": "預留比例（%）",
+      "percent_invalid": "請輸入 1 到 99 之間的整數。",
+      "mode_label": "達到預留時",
+      "mode_soft": "軟：僅作為最後選擇",
+      "mode_hard": "硬：停止新工作階段",
+      "mode_soft_hint": "低於預留時，僅在沒有其他可用帳號時，代理才會在此帳號上開啟新工作階段。進行中的工作階段不受影響。",
+      "mode_hard_hint": "低於預留時，代理在視窗重置前不會在此帳號上開啟新工作階段。進行中的工作階段不受影響。"
+    },
     "weight_label": "調度權重（weight）",
     "weight_tooltip": "預設值為 1；小於或等於 0 時不參與加權調度；最大值為 1,000,000。填入後開啟加權輪詢設定即可生效。",
     "weight_hint": "預設值為 1；小於或等於 0 時不參與加權調度；最大值為 1,000,000。填入後開啟<settingsLink>加權輪詢設定</settingsLink>即可生效。",
