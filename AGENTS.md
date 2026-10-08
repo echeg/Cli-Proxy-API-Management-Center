@@ -56,6 +56,8 @@ Keep user-facing text in i18n. Preserve keyboard interaction, accessible names, 
 
 Tests are centralized under `tests/` as `*.test.ts` and use `bun:test`. Existing suites cover pure logic, React server-side static rendering via `renderToStaticMarkup`, and source/contract checks. There is no configured browser DOM test harness; static markup tests do not verify browser interactions. Prefer extracting testable logic and following nearby test patterns rather than introducing a new framework by default.
 
+Under Bun, `.module.scss` imports resolve to strings, so CSS-module class names are `undefined` in SSR tests and anything that calls `bindQuotaClasses` at import throws. Quota page cards and the Ledger therefore render from pure models (`compactCardModel.ts`, `resetInventory.ts`, `quotaTotalsModel.ts`) with their own SCSS modules, express state through `data-*` attributes, and take a `now` prop for deterministic relative times.
+
 For code changes, add or update relevant regression tests, run focused tests while iterating, and run `bun run verify` before handoff. For UI changes, also verify the affected route in a browser and include screenshots or notes. Report commands actually run, failures, and anything not verified; if a backend or browser is unavailable, state the limitation explicitly. Documentation-only changes can be checked with diff/content validation instead of a full build.
 
 ## Security

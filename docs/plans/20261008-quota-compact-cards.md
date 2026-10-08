@@ -284,8 +284,8 @@
 - [x] ➕ browser check at 1800×1064 against the live backend through a local same-origin preview of `dist/index.html` (no deploy, no reset spent, no reserve saved): with today's 4 accounts all cards sit in one row (bottoms ≤ 813px) with the sidebar expanded or collapsed, toolbar in one 59px row; inline confirm (Codex + Claude) and the reserve editor with tick preview open and cancel with focus restored. Polish found there: card min width 380px → 340px, toolbar shows only the last-selected time (name and hint in the tooltip), and `ResetActionFooter` got a `card` variant without the drawer divider (Codex note moved to the button tooltip)
 
 ### Task 10: [Final] Update documentation
-- [ ] update `README.md` and `README_CN.md` (Quotas rows at about :76-77): a compact default Cards view, the settings toolbar, and reserve editing on the Quota page as well as in Auth Files
-- [ ] update `AGENTS.md` only if a new pattern needs documenting (for example "Quota cards are built from pure models with their own SCSS; do not bind QuotaBody classes there"). Sync the local `CLAUDE.md` if present.
+- [x] update `README.md` and `README_CN.md` (Quotas rows at about :76-77): a compact default Cards view, the settings toolbar, and reserve editing on the Quota page as well as in Auth Files
+- [x] update `AGENTS.md` only if a new pattern needs documenting (for example "Quota cards are built from pure models with their own SCSS; do not bind QuotaBody classes there"). Sync the local `CLAUDE.md` if present.
 
 ## Technical Details
 - **Layout budget at 1800×1064**:
