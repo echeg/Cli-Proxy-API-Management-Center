@@ -246,20 +246,21 @@
 - [x] ➕ the editor keys live in `quota_management.reserve_editor.*` (not `reserve.editor.*`, since `quota_management.reserve` is an existing namespace); field labels and hints reuse `auth_files.reserve.*`; the card container takes `onReserveSaved` (= `reloadReserveVerdicts`)
 
 ### Task 8: Page integration — Cards becomes the compact grid and the default view
-- [ ] write failing tests:
+- [x] write failing tests:
   - `tests/quotaUiState.test.ts` (or the existing suite): default view `'cards'` when nothing is stored, and a stored view is still respected
   - a source/SSR test that Cards mode renders `QuotaTotalsStrip` + the `QuotaCompactCard` grid and no `QuotaTimeline`
-- [ ] in `QuotaPage.tsx`:
+- [x] in `QuotaPage.tsx`:
   - set the default view to `'cards'`
   - render the compact grid in Cards mode with `quotaFor`, `showEmails`, `resettingKeys`, `performReset`, `refreshQuota`, `reloadReserveVerdicts`, `now` and the session guards; keep pagination
   - remove the Cards-mode `QuotaTimeline`
   - grid CSS `repeat(auto-fill, minmax(380px, 1fr))` with `align-items: start` (4 columns at 1800px with the sidebar collapsed)
-- [ ] retire `QuotaCard.tsx` (and `QuotaCard.module.scss` if unused). Rewrite the guards that referenced it, keeping their intent:
+- [x] retire `QuotaCard.tsx` (and `QuotaCard.module.scss` if unused). Rewrite the guards that referenced it, keeping their intent:
   - `tests/claudeResetGrants.test.ts` QuotaCard strings → the equivalent card wiring (blocked state and confirm through the shared mount)
   - `tests/quotaResetExecution.test.ts` modal `onReset` guard → the card uses `performReset`; the hook still keeps `showConfirmation({` for any remaining modal caller
   - keep every other `tests/quotaLedgerResets.test.ts` page guard valid (`afterQuotaProbe`, Refresh-All reload, `initialLoading`)
-- [ ] keep the search/sort toolbar markup and SCSS required by `tests/quotaToolbar.test.ts` and `tests/providerTabsOverflow.test.ts`
-- [ ] run `bun test` (full) and `bun run verify` - must pass before task 9
+- [x] keep the search/sort toolbar markup and SCSS required by `tests/quotaToolbar.test.ts` and `tests/providerTabsOverflow.test.ts`
+- [x] run `bun test` (full) and `bun run verify` - must pass before task 9
+- [x] ➕ the default lives in `constants.ts` as `DEFAULT_QUOTA_VIEW_MODE`; the old card entrance animation (`cardsAnimated`, `CARD_ENTRANCE_BUDGET_MS`) was removed with `QuotaCard`; `QuotaBody.module.scss` is no longer imported by the page but is kept because `tests/quotaClassContract.test.ts` checks it and it is upstream-owned
 
 ### Task 9: Verify acceptance criteria
 - [ ] verify every Overview requirement:

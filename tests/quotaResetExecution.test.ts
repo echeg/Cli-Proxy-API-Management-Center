@@ -214,8 +214,8 @@ describe('quota reset wiring contracts', () => {
   const page = readFileSync('src/features/quota/QuotaPage.tsx', 'utf8');
   const actions = readFileSync('src/features/quota/hooks/useQuotaActions.ts', 'utf8');
 
-  test('Cards keep the modal reset flow', () => {
-    expect(page).toContain('onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}');
+  test('Cards confirm inline; the modal flow stays available in the hook', () => {
+    expect(page).toContain('onReset={() => performReset(entry.file, QUOTA_ADAPTERS[entry.type])}');
     expect(actions).toContain('showConfirmation({');
     expect(actions).toContain('await runReset(file, adapter, resetQuotaFn);');
   });

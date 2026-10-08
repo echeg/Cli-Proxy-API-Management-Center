@@ -373,12 +373,13 @@ test('resetGrantBlockReason names why no grant can be spent', () => {
   expect(resetGrantBlockReason({ ...base, grants: [{ ...a, resetsLeft: 0 }] }, 0)).toBeUndefined();
 });
 
-test('Claude card uses Codex count and action styles and shared confirmation, not a grant dialog', async () => {
-  const card = await Bun.file('src/features/quota/components/QuotaCard.tsx').text();
+test('Claude cards claim through the shared reset flow, not a grant dialog', async () => {
+  // The compact card replaced QuotaCard: it arms the shared inline flow, which mounts the hook.
+  const card = await Bun.file('src/features/quota/components/QuotaCompactCardItem.tsx').text();
   const hook = await Bun.file('src/features/quota/providers/claude/ClaudeResetGrants.tsx').text();
-  expect(card).toContain('quotaClasses.codexPlanValue}>{claudeReset.count');
-  expect(card).toContain('disabled={claudeReset.blocked}');
-  expect(card).toContain('onClick={claudeReset.confirm}');
+  expect(card).toContain('<ClaudeResetActionMount');
+  expect(card).toContain('disabled={blocked}');
+  expect(card).toContain('onClick={() => setClaudeArmed(true)}');
   expect(hook).toContain('showConfirmation({');
   expect(hook).toContain("pending ? 'claude_reset.retry_confirm'");
   expect(hook).not.toContain('<Modal');

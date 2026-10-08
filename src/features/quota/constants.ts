@@ -24,5 +24,5 @@ export type QuotaSortMode = (typeof QUOTA_SORT_MODES)[number];
 export const QUOTA_VIEW_MODES = ['ledger', 'cards', 'timeline'] as const;
 export type QuotaViewMode = (typeof QUOTA_VIEW_MODES)[number];
 
-/** Match useRevealGroup's total entrance animation budget. */
-export const CARD_ENTRANCE_BUDGET_MS = 360;
+/** Compact Cards is the default; a stored choice in `quotaPage.uiState` wins. */
+export const DEFAULT_QUOTA_VIEW_MODE: QuotaViewMode = 'cards';

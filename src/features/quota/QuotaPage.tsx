@@ -19,10 +19,10 @@ import { useNow } from '@/hooks/useNow';
 import { useRevealGroup } from '@/hooks/motion';
 import { useAuthStore, useQuotaStore, useThemeStore } from '@/stores';
 import type { AuthFileItem, ResolvedTheme } from '@/types';
-import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { ProviderTabs } from '@/features/authFiles/components/ProviderTabs';
 import { QuotaHeader } from './components/QuotaHeader';
-import { QuotaCard } from './components/QuotaCard';
+import { QuotaCompactCardItem } from './components/QuotaCompactCardItem';
 import { QuotaTimeline } from './components/QuotaTimeline';
 import { QuotaLedger } from './components/QuotaLedger';
 import { QuotaSettingsBar } from './components/QuotaSettingsToolbar';
@@ -30,7 +30,7 @@ import { QuotaTotalsStrip } from './components/QuotaTotalsStrip';
 import { buildQuotaTotals } from './quotaTotalsModel';
 import { maskQuotaName, maskQuotaText } from './ledgerModel';
 import {
-  CARD_ENTRANCE_BUDGET_MS,
+  DEFAULT_QUOTA_VIEW_MODE,
   QUOTA_PAGE_SIZE,
   QUOTA_SORT_MODES,
   QUOTA_TAB_ORDER,
@@ -75,7 +75,7 @@ export function QuotaPage() {
   );
   const [page, setPage] = useState(1);
   const [viewMode, setViewMode] = useState<QuotaViewMode>(
-    () => readQuotaUiState()?.viewMode ?? 'ledger'
+    () => readQuotaUiState()?.viewMode ?? DEFAULT_QUOTA_VIEW_MODE
   );
   const [showEmails, setShowEmails] = useState(false);
   const displayNameFor = useCallback(
@@ -278,7 +278,7 @@ export function QuotaPage() {
     },
     [reloadReserveVerdicts]
   );
-  const { resettingKeys, refreshQuota, resetQuota, performReset } = useQuotaActions(
+  const { resettingKeys, refreshQuota, performReset } = useQuotaActions(
     disableControls,
     formatDisplayText,
     afterQuotaProbe
@@ -327,21 +327,6 @@ export function QuotaPage() {
   // Skeletons only stand in for a session's first list; a later refresh keeps the view mounted,
   // so open Ledger drawers show their loading state instead of closing.
   const initialLoading = loading && filesGeneration !== sessionGeneration;
-
-  /* Animate cards once. Newly mounted cards after navigation do not replay. */
-
-  const [cardsAnimated, setCardsAnimated] = useState(false);
-  const enableCardEntrance = !cardsAnimated && !loading && pageItems.length > 0;
-  useEffect(() => {
-    if (enableCardEntrance) {
-      setCardsAnimated(true);
-    }
-  }, [enableCardEntrance]);
-  const cardEntranceDelay = (index: number): number | null => {
-    if (!enableCardEntrance) return null;
-    if (pageItems.length <= 1) return 0;
-    return Math.round((index / (pageItems.length - 1)) * CARD_ENTRANCE_BUDGET_MS);
-  };
 
   /* Rendering. */
 
@@ -496,19 +481,19 @@ export function QuotaPage() {
           <>
             {totals && <QuotaTotalsStrip totals={totals} now={cardsNow} />}
             <div className={styles.grid}>
-              {pageItems.map((entry, index) => (
-                <QuotaCard
+              {pageItems.map((entry) => (
+                <QuotaCompactCardItem
                   key={`${entry.type}:${getQuotaCacheKey(entry.file)}`}
                   entry={entry}
-                  displayName={displayNameFor(getQuotaDisplayName(entry.file))}
-                  formatDisplayText={formatDisplayText}
                   quota={getQuota(entry)}
                   resolvedTheme={resolvedTheme}
-                  canRefresh={canUseActions && !entry.file.disabled}
-                  resetting={resettingKeys.has(getQuotaCacheKey(entry.file))}
-                  entranceDelayMs={cardEntranceDelay(index)}
+                  now={cardsNow}
+                  showEmails={showEmails}
+                  canRefresh={canUseActions}
+                  codexResetting={resettingKeys.has(getQuotaCacheKey(entry.file))}
                   onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
-                  onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+                  onReset={() => performReset(entry.file, QUOTA_ADAPTERS[entry.type])}
+                  onReserveSaved={reloadReserveVerdicts}
                 />
               ))}
             </div>
@@ -541,16 +526,6 @@ export function QuotaPage() {
               {t('auth_files.pagination_next')}
             </Button>
           </div>
-        )}
-
-        {/* Bound timeline rendering to the currently visible credentials. */}
-        {viewMode === 'cards' && (
-          <QuotaTimeline
-            entries={pageItems}
-            quotaFor={getQuota}
-            displayNameFor={displayNameFor}
-            resolvedTheme={resolvedTheme}
-          />
         )}
       </section>
     </div>
