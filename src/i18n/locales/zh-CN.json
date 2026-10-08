@@ -1556,6 +1556,13 @@
     }
   },
   "quota_management": {
+    "totals": {
+      "title": "额度汇总",
+      "of_capacity": "共 {{capacity}}%",
+      "resets_title": "持有的重置",
+      "resets_split": "{{claude}} Claude · {{codex}} Codex",
+      "resets_next": "最早过期 {{when}}"
+    },
     "toolbar": {
       "switching": "切换",
       "last": "最近 {{name}} · {{time}}"

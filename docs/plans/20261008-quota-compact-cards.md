@@ -168,20 +168,20 @@
 - [x] ➕ added a shared `components/ProviderPill.tsx` (Auth Files badge colors via `getTypeColor`) for the toolbar and cards; `SubscriptionRouting.tsx`/`CodexFastMode.tsx` are no longer rendered by the page but stay as hook-backed components with their existing tests (revisit in Task 9)
 
 ### Task 3: Totals strip with "Resets held"
-- [ ] write failing tests in `tests/quotaTotalsModel.test.ts` for `buildQuotaTotals(entries, quotaFor, t, nowMs)`:
+- [x] write failing tests in `tests/quotaTotalsModel.test.ts` for `buildQuotaTotals(entries, quotaFor, t, nowMs)`:
   - per provider, primary window totals via `ledgerWindows` + `summarizeLedgerWindows`; Claude yields both 7-day and 7-day Fable, Codex yields weekly
   - `remaining` is null when any row is unknown
   - capacity = rows×100
   - the resets tile sums `countResets(buildResetInventory(...).items)` across codex/claude entries, splits counts per provider, and reports the soonest `expiresAtMs`
   - providers without entries are omitted
   - errors are not counted
-- [ ] write failing SSR tests in `tests/quotaTotalsStrip.test.ts`:
+- [x] write failing SSR tests in `tests/quotaTotalsStrip.test.ts`:
   - tiles render name, count, total "152% of 200%", segmented bars and the reset line
   - the resets tile shows "8", "2 Claude · 6 Codex" and "next expires 10/22, 19:00 · in 14 days", using `now`
   - no `role="group"`
-- [ ] implement `src/features/quota/quotaTotalsModel.ts` and `components/QuotaTotalsStrip.tsx` + `.module.scss` (slim tiles, about 90px tall), rendered in Cards view only, above the grid
-- [ ] add the `quota_management.totals.*` keys in all six locales
-- [ ] run `bun test tests/quotaTotalsModel.test.ts tests/quotaTotalsStrip.test.ts` and `bun run verify` - must pass before task 4
+- [x] implement `src/features/quota/quotaTotalsModel.ts` and `components/QuotaTotalsStrip.tsx` + `.module.scss` (slim tiles, about 90px tall), rendered in Cards view only, above the grid
+- [x] add the `quota_management.totals.*` keys in all six locales
+- [x] run `bun test tests/quotaTotalsModel.test.ts tests/quotaTotalsStrip.test.ts` and `bun run verify` - must pass before task 4
 
 ### Task 4: Shared reserve visuals
 - [ ] write failing SSR tests in `tests/quotaReserveVisuals.test.ts` (move or duplicate the relevant assertions from `tests/quotaLedgerReserve.test.ts`):

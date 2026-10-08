@@ -1557,6 +1557,13 @@
     }
   },
   "quota_management": {
+    "totals": {
+      "title": "할당량 합계",
+      "of_capacity": "/ {{capacity}}%",
+      "resets_title": "보유한 초기화",
+      "resets_split": "{{claude}} Claude · {{codex}} Codex",
+      "resets_next": "가장 빠른 만료 {{when}}"
+    },
     "toolbar": {
       "switching": "전환",
       "last": "최근 {{name}} · {{time}}"

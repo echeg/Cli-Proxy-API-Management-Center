@@ -26,6 +26,8 @@ import { QuotaCard } from './components/QuotaCard';
 import { QuotaTimeline } from './components/QuotaTimeline';
 import { QuotaLedger } from './components/QuotaLedger';
 import { QuotaSettingsBar } from './components/QuotaSettingsToolbar';
+import { QuotaTotalsStrip } from './components/QuotaTotalsStrip';
+import { buildQuotaTotals } from './quotaTotalsModel';
 import { maskQuotaName, maskQuotaText } from './ledgerModel';
 import {
   CARD_ENTRANCE_BUDGET_MS,
@@ -201,6 +203,11 @@ export function QuotaPage() {
     [getQuota, sortNow]
   );
   // Sort before pagination so recovery order applies to all matching accounts.
+  const cardsNow = useNow(viewMode === 'cards');
+  const totals = useMemo(
+    () => (viewMode === 'cards' ? buildQuotaTotals(filteredEntries, getQuota, t, cardsNow) : null),
+    [viewMode, filteredEntries, getQuota, t, cardsNow]
+  );
   const sortedEntries = useMemo(
     () => sortQuotaEntries(filteredEntries, sortMode, resolveNextRecovery),
     [filteredEntries, sortMode, resolveNextRecovery]
@@ -486,23 +493,26 @@ export function QuotaPage() {
             resolvedTheme={resolvedTheme}
           />
         ) : (
-          <div className={styles.grid}>
-            {pageItems.map((entry, index) => (
-              <QuotaCard
-                key={`${entry.type}:${getQuotaCacheKey(entry.file)}`}
-                entry={entry}
-                displayName={displayNameFor(getQuotaDisplayName(entry.file))}
-                formatDisplayText={formatDisplayText}
-                quota={getQuota(entry)}
-                resolvedTheme={resolvedTheme}
-                canRefresh={canUseActions && !entry.file.disabled}
-                resetting={resettingKeys.has(getQuotaCacheKey(entry.file))}
-                entranceDelayMs={cardEntranceDelay(index)}
-                onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
-                onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
-              />
-            ))}
-          </div>
+          <>
+            {totals && <QuotaTotalsStrip totals={totals} now={cardsNow} />}
+            <div className={styles.grid}>
+              {pageItems.map((entry, index) => (
+                <QuotaCard
+                  key={`${entry.type}:${getQuotaCacheKey(entry.file)}`}
+                  entry={entry}
+                  displayName={displayNameFor(getQuotaDisplayName(entry.file))}
+                  formatDisplayText={formatDisplayText}
+                  quota={getQuota(entry)}
+                  resolvedTheme={resolvedTheme}
+                  canRefresh={canUseActions && !entry.file.disabled}
+                  resetting={resettingKeys.has(getQuotaCacheKey(entry.file))}
+                  entranceDelayMs={cardEntranceDelay(index)}
+                  onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+                  onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+                />
+              ))}
+            </div>
+          </>
         )}
 
         {!initialLoading && filteredEntries.length > QUOTA_PAGE_SIZE && (

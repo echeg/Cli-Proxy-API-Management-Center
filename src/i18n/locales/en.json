@@ -1557,6 +1557,13 @@
     }
   },
   "quota_management": {
+    "totals": {
+      "title": "Quota totals",
+      "of_capacity": "of {{capacity}}%",
+      "resets_title": "Resets held",
+      "resets_split": "{{claude}} Claude · {{codex}} Codex",
+      "resets_next": "next expires {{when}}"
+    },
     "toolbar": {
       "switching": "Switching",
       "last": "last {{name}} · {{time}}"

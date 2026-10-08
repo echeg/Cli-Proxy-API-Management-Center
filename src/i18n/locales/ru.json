@@ -1560,6 +1560,13 @@
     }
   },
   "quota_management": {
+    "totals": {
+      "title": "Итоги квот",
+      "of_capacity": "из {{capacity}}%",
+      "resets_title": "Резеты в запасе",
+      "resets_split": "{{claude}} Claude · {{codex}} Codex",
+      "resets_next": "ближайший сгорает {{when}}"
+    },
     "toolbar": {
       "switching": "Переключение",
       "last": "последний {{name}} · {{time}}"
