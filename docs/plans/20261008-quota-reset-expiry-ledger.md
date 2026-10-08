@@ -129,14 +129,14 @@
 - [x] ➕ fixed order-dependent `tests/authFileCooldowns.test.ts` failure exposed by the merge (upstream suites switch the shared i18n to `en`; the hint's apostrophe is HTML-escaped in markup): compare against escaped text
 
 ### Task 2: Load Claude reset grants into the quota store
-- [ ] write failing tests in `tests/claudeQuotaResetGrants.test.ts` using `spyOn(apiCallApi, 'request')` and routing by URL:
+- [x] write failing tests in `tests/claudeQuotaResetGrants.test.ts` using `spyOn(apiCallApi, 'request')` and routing by URL:
   - a valid `cedar_ember` block → `CLAUDE_CONFIG.fetchQuota` returns `resetGrants` (parsed grants), and `buildSuccessState` keeps them
   - grants HTTP error, rejected request, or malformed block → status still `success`, windows intact, `resetGrants: null`, `resetGrantsError` set
   - a failing usage request still throws (unchanged)
-- [ ] write a guard test: `CLAUDE_USAGE_URL` contains no `?`, and the grants request is a separate call to `ANTHROPIC_API_ORIGIN + ANTHROPIC_RESET_GRANT_STATUS_PATH`
-- [ ] add `resetGrants?: AnthropicResetGrant[] | null` and `resetGrantsError?: string` to `ClaudeQuotaState` (`src/types/quota.ts`) and to `ClaudeQuotaData` (where it is declared for `claude/data.ts`)
-- [ ] in `fetchClaudeQuota` (`src/features/quota/providers/claude/data.ts`), add `readClaudeResetGrants(authIndex)` as the third parallel leg of the existing `Promise.allSettled`. Map a rejection to `resetGrants: null` + `resetGrantsError: t('claude_reset.read_error')`. Map `CLAUDE_CONFIG.buildSuccessState` to include both fields; leave the loading/error builders unchanged.
-- [ ] run `bun test tests/claudeQuotaResetGrants.test.ts tests/claudeResetGrants.test.ts` and `bun run type-check` - must pass before task 3
+- [x] write a guard test: `CLAUDE_USAGE_URL` contains no `?`, and the grants request is a separate call to `ANTHROPIC_API_ORIGIN + ANTHROPIC_RESET_GRANT_STATUS_PATH`
+- [x] add `resetGrants?: AnthropicResetGrant[] | null` and `resetGrantsError?: string` to `ClaudeQuotaState` (`src/types/quota.ts`) and to `ClaudeQuotaData` (where it is declared for `claude/data.ts`)
+- [x] in `fetchClaudeQuota` (`src/features/quota/providers/claude/data.ts`), add `readClaudeResetGrants(authIndex)` as the third parallel leg of the existing `Promise.allSettled`. Map a rejection to `resetGrants: null` + `resetGrantsError: t('claude_reset.read_error')`. Map `CLAUDE_CONFIG.buildSuccessState` to include both fields; leave the loading/error builders unchanged.
+- [x] run `bun test tests/claudeQuotaResetGrants.test.ts tests/claudeResetGrants.test.ts` and `bun run type-check` - must pass before task 3
 
 ### Task 3: Reset inventory model and Codex credit titles
 - [ ] write failing tests in `tests/codexQuota.test.ts` (or the suite that covers `normalizeCodexResetCreditsPayload`): the normalizer keeps a trimmed `title` when present and omits it when absent; the existing filters (`reset_type`, `status`, `expires_at`) are unchanged

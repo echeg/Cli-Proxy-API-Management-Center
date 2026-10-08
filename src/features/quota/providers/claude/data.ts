@@ -14,6 +14,7 @@ import type {
   ClaudeUsagePayload,
 } from '@/types';
 import { apiCallApi, getApiCallErrorMessage } from '@/services/api';
+import { readClaudeResetGrants, type AnthropicResetGrant } from '@/services/api/claudeResetGrants';
 import {
   CLAUDE_PROFILE_URL,
   CLAUDE_USAGE_URL,
@@ -36,6 +37,8 @@ export type ClaudeQuotaData = {
   windows: ClaudeQuotaWindow[];
   extraUsage?: ClaudeExtraUsage | null;
   planType?: string | null;
+  resetGrants?: AnthropicResetGrant[] | null;
+  resetGrantsError?: string;
 };
 
 const findFableUsageLimit = (payload: ClaudeUsagePayload) => {
@@ -180,7 +183,7 @@ const fetchClaudeQuota = async (file: AuthFileItem, t: TFunction): Promise<Claud
     throw new Error(t('claude_quota.missing_auth_index'));
   }
 
-  const [usageResult, profileResult] = await Promise.allSettled([
+  const [usageResult, profileResult, grantsResult] = await Promise.allSettled([
     apiCallApi.request({
       authIndex,
       method: 'GET',
@@ -193,6 +196,9 @@ const fetchClaudeQuota = async (file: AuthFileItem, t: TFunction): Promise<Claud
       url: CLAUDE_PROFILE_URL,
       header: { ...CLAUDE_REQUEST_HEADERS },
     }),
+    // Separate request: the usage URL must stay query-free so the proxy keeps
+    // recording it as a routing probe.
+    readClaudeResetGrants(authIndex),
   ]);
 
   if (usageResult.status === 'rejected') {
@@ -220,7 +226,13 @@ const fetchClaudeQuota = async (file: AuthFileItem, t: TFunction): Promise<Claud
         )
       : null;
 
-  return { windows, extraUsage: payload.extra_usage, planType };
+  // A grants read failure never hides the usage windows.
+  const grants =
+    grantsResult.status === 'fulfilled'
+      ? { resetGrants: grantsResult.value.grants }
+      : { resetGrants: null, resetGrantsError: t('claude_reset.read_error') };
+
+  return { windows, extraUsage: payload.extra_usage, planType, ...grants };
 };
 
 export const CLAUDE_CONFIG: QuotaProviderData<ClaudeQuotaState, ClaudeQuotaData> = {
@@ -236,6 +248,8 @@ export const CLAUDE_CONFIG: QuotaProviderData<ClaudeQuotaState, ClaudeQuotaData>
     windows: data.windows,
     extraUsage: data.extraUsage,
     planType: data.planType,
+    resetGrants: data.resetGrants,
+    resetGrantsError: data.resetGrantsError,
   }),
   buildErrorState: (message, status) => ({
     status: 'error',
