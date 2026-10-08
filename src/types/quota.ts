@@ -76,6 +76,7 @@ export interface CodexRateLimitResetCredit {
   status: string;
   grantedAt: string;
   expiresAt: string;
+  title?: string;
 }
 
 export interface CodexAccountCredits {

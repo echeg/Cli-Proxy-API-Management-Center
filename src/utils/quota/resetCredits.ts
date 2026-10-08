@@ -3,6 +3,8 @@ export interface CodexResetCredit {
   status: string;
   grantedAt: string;
   expiresAt: string;
+  /** Upstream display title (e.g. "Full reset"); omitted when absent or blank. */
+  title?: string;
 }
 
 export interface CodexResetCreditsSummary {
@@ -52,11 +54,14 @@ const normalizeCredit = (value: unknown): CodexResetCredit | null => {
   const expiresAt = normalizeStringValue(record.expires_at ?? record.expiresAt);
   if (!expiresAt) return null;
 
+  const title = normalizeStringValue(record.title);
+
   return {
     id: normalizeStringValue(record.id) ?? '',
     status: normalizeStringValue(record.status) ?? '',
     grantedAt: normalizeStringValue(record.granted_at ?? record.grantedAt) ?? '',
     expiresAt,
+    ...(title ? { title } : {}),
   };
 };
 

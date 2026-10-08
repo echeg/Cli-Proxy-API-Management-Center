@@ -139,16 +139,16 @@
 - [x] run `bun test tests/claudeQuotaResetGrants.test.ts tests/claudeResetGrants.test.ts` and `bun run type-check` - must pass before task 3
 
 ### Task 3: Reset inventory model and Codex credit titles
-- [ ] write failing tests in `tests/codexQuota.test.ts` (or the suite that covers `normalizeCodexResetCreditsPayload`): the normalizer keeps a trimmed `title` when present and omits it when absent; the existing filters (`reset_type`, `status`, `expires_at`) are unchanged
-- [ ] write failing tests in `tests/resetInventory.test.ts` with an explicit `nowMs`:
+- [x] write failing tests in `tests/codexQuota.test.ts` (or the suite that covers `normalizeCodexResetCreditsPayload`): the normalizer keeps a trimmed `title` when present and omits it when absent; the existing filters (`reset_type`, `status`, `expires_at`) are unchanged
+- [x] write failing tests in `tests/resetInventory.test.ts` with an explicit `nowMs`:
   - Codex: one item per `available` credit; expired, unparseable and non-available credits dropped; sorted ascending; `label` from `title`
   - Claude: items only for `resetsLeft > 0`; past `endsAt` dropped; `endsAt: null` kept and sorted last; `left`/`total`/`clears`/`label` mapped; paused or not-started grants still listed
   - tie-break by `id`; empty `id` falls back to an index-based id
   - `resetGrants === null` or `rateLimitResetCreditsError` → `{ items: [], error }`
   - non-success quota → `null`; other providers → `null`
-- [ ] add optional `title?: string` to `CodexResetCredit` in `src/utils/quota/resetCredits.ts` and to the duplicate in `src/types/quota.ts`, and keep it in `normalizeCredit`
-- [ ] create `src/features/quota/resetInventory.ts` exporting `ResetInventoryItem`, `ResetInventory` and `buildResetInventory(provider, quota, nowMs)`. Make it React-free, use `parseIsoToMs`, and follow the style of `resetSchedule.ts`. Do NOT refactor `CodexQuotaBody`, the Timeline or `resetSchedule` onto it.
-- [ ] run `bun test tests/resetInventory.test.ts tests/codexQuota.test.ts tests/quotaBodyRendering.test.ts` - must pass before task 4
+- [x] add optional `title?: string` to `CodexResetCredit` in `src/utils/quota/resetCredits.ts` and to the duplicate in `src/types/quota.ts`, and keep it in `normalizeCredit`
+- [x] create `src/features/quota/resetInventory.ts` exporting `ResetInventoryItem`, `ResetInventory` and `buildResetInventory(provider, quota, nowMs)`. Make it React-free, use `parseIsoToMs`, and follow the style of `resetSchedule.ts`. Do NOT refactor `CodexQuotaBody`, the Timeline or `resetSchedule` onto it.
+- [x] run `bun test tests/resetInventory.test.ts tests/codexQuota.test.ts tests/quotaBodyRendering.test.ts` - must pass before task 4
 
 ### Task 4: Claude claim — modal-free execute() and proxy cooldown parity
 - [ ] write failing tests in `tests/claudeClaimCooldown.test.ts` for a new helper `clearClaudeCooldownAfterClaim` (`src/features/quota/providers/claude/claimCooldown.ts`), using `spyOn(authFilesApi, 'resetCooldown')`:

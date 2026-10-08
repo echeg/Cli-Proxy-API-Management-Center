@@ -100,6 +100,68 @@ describe('Codex current usage payload', () => {
     expect(CODEX_CONFIG.canResetQuota?.(quota)).toBeTrue();
   });
 
+  test('keeps a trimmed credit title and omits it when absent', () => {
+    const summary = normalizeCodexResetCreditsPayload({
+      credits: [
+        {
+          id: 'with-title',
+          reset_type: 'codex_rate_limits',
+          status: 'available',
+          title: '  Full reset  ',
+          granted_at: '2026-10-01T00:00:00Z',
+          expires_at: '2026-10-22T00:00:00Z',
+        },
+        {
+          id: 'blank-title',
+          reset_type: 'codex_rate_limits',
+          status: 'available',
+          title: '   ',
+          expires_at: '2026-10-23T00:00:00Z',
+        },
+        {
+          id: 'no-title',
+          reset_type: 'codex_rate_limits',
+          status: 'available',
+          expires_at: '2026-10-29T00:00:00Z',
+        },
+        {
+          id: 'wrong-type',
+          reset_type: 'other',
+          status: 'available',
+          title: 'Ignored',
+          expires_at: '2026-10-29T00:00:00Z',
+        },
+        {
+          id: 'used',
+          reset_type: 'codex_rate_limits',
+          status: 'used',
+          title: 'Ignored',
+          expires_at: '2026-10-29T00:00:00Z',
+        },
+        {
+          id: 'no-expiry',
+          reset_type: 'codex_rate_limits',
+          status: 'available',
+          title: 'Ignored',
+        },
+      ],
+    });
+
+    expect(summary.credits).toEqual([
+      {
+        id: 'with-title',
+        status: 'available',
+        grantedAt: '2026-10-01T00:00:00Z',
+        expiresAt: '2026-10-22T00:00:00Z',
+        title: 'Full reset',
+      },
+      { id: 'blank-title', status: 'available', grantedAt: '', expiresAt: '2026-10-23T00:00:00Z' },
+      { id: 'no-title', status: 'available', grantedAt: '', expiresAt: '2026-10-29T00:00:00Z' },
+    ]);
+    expect('title' in summary.credits[1]!).toBeFalse();
+    expect('title' in summary.credits[2]!).toBeFalse();
+  });
+
   test('keeps reset support for legacy payloads without applicable count', () => {
     const quota: CodexQuotaState = {
       status: 'success',
