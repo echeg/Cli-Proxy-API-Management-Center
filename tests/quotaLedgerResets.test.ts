@@ -259,6 +259,32 @@ describe('Ledger resets chip', () => {
     expect(empty).toContain('No resets left');
   });
 
+  test('keeps a closed drawer reachable while a Claude claim is unresolved', () => {
+    const closedChip = (inventory: { items: []; error?: string } | null, loading = false) =>
+      renderToStaticMarkup(
+        createElement(QuotaLedgerResetsChip, {
+          inventory,
+          expanded: false,
+          loading,
+          controls: 'drawer-1',
+          showEmails: true,
+          now,
+          unresolved: true,
+          onToggle: () => {},
+        })
+      );
+    // The claim may have spent the last reset, or the refreshed read may have failed.
+    for (const markup of [
+      closedChip({ items: [] }),
+      closedChip({ items: [], error: 'offline' }),
+      closedChip(null, true),
+    ]) {
+      expect(markup).toMatch(/<button[^>]*aria-expanded="false"/);
+      expect(markup).toContain('Reset outcome unknown');
+      expect(markup).toContain('data-tone="warn"');
+    }
+  });
+
   test('adds no role="group" beyond the summary windows', () => {
     const markup = renderLedger([
       { type: 'codex', name: 'codex-a.json', quota: codexQuota(TWO_CODEX) },
@@ -623,6 +649,34 @@ describe('Ledger reset wiring', () => {
     expect(ledger).toContain('performReset(entry.file, QUOTA_ADAPTERS[entry.type])');
     expect(ledger).toContain('resettingKeys={resettingKeys}');
     expect(ledger).toContain('refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])');
+  });
+
+  test('a row reads the claim journal so an unresolved claim outlives its drawer', () => {
+    const ledger = readFileSync('src/features/quota/components/QuotaLedger.tsx', 'utf8');
+    expect(ledger).toContain('resetGrantOperations.hasUnresolved(');
+    expect(ledger).toContain('unresolved={unresolvedClaim}');
+  });
+
+  test('quota probes reload the reserve verdict of reserved credentials', () => {
+    const page = readFileSync('src/features/quota/QuotaPage.tsx', 'utf8');
+    // The shared action hook runs it, so Cards and Ledger actions both reload the verdict.
+    expect(page).toContain('if (file.quotaReserve) void reloadReserveVerdicts();');
+    expect(page).toMatch(
+      /useQuotaActions\(\s*disableControls,\s*formatDisplayText,\s*afterQuotaProbe\s*\)/
+    );
+    // Page-wide refresh probes after the list read, so it re-reads the verdict afterwards.
+    expect(page).toMatch(
+      /await loadQuota\(classifyQuotaFiles\(loadedFiles\)\);\s*if \(hasQuotaReserve\(loadedFiles\)\) await reloadReserveVerdicts\(\);/
+    );
+  });
+
+  test('a page-wide refresh keeps the Ledger mounted so open drawers stay open', () => {
+    const page = readFileSync('src/features/quota/QuotaPage.tsx', 'utf8');
+    expect(page).toContain(
+      'const initialLoading = loading && filesGeneration !== sessionGeneration;'
+    );
+    expect(page).toContain('{initialLoading ? (');
+    expect(page).not.toContain('{loading ? (');
   });
 
   test('the confirm step focuses Cancel, cancels on Esc and returns focus to the button', () => {

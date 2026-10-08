@@ -4,7 +4,12 @@ import { Button } from '@/components/ui/Button';
 import { IconRefreshCw } from '@/components/ui/icons';
 import { useNow } from '@/hooks/useNow';
 import type { AuthFileItem, ResolvedTheme } from '@/types';
-import { buildResetDisplay, formatInstantShort, resolveQuotaErrorMessage } from '@/utils/quota';
+import {
+  buildResetDisplay,
+  formatInstantShort,
+  normalizeAuthIndex,
+  resolveQuotaErrorMessage,
+} from '@/utils/quota';
 import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
 import { getAuthFileIcon, getTypeLabel } from '@/features/authFiles/constants';
 import { QUOTA_TAB_ORDER } from '../constants';
@@ -20,6 +25,10 @@ import {
 import type { LedgerWindow } from '../ledgerModel';
 import type { QuotaFileEntry } from '../logic';
 import type { QuotaCardState } from '../providers';
+import {
+  claudeResetOperationKey,
+  resetGrantOperations,
+} from '../providers/claude/resetGrantOperations';
 import { codexResetAction, countResets, formatMonthDay } from '../resetActions';
 import { buildResetInventory } from '../resetInventory';
 import {
@@ -225,6 +234,15 @@ function LedgerRow({
   const name = getQuotaDisplayName(entry.file);
   const label = showEmails ? name : maskQuotaName(name);
   const loading = quota?.status === 'loading';
+  // The journal outlives the drawer; the row re-reads it on every render (claims refresh quota).
+  const unresolvedClaim =
+    entry.type === 'claude' &&
+    resetGrantOperations.hasUnresolved(
+      claudeResetOperationKey(
+        entry.file.name,
+        normalizeAuthIndex(entry.file.auth_index ?? entry.file.authIndex)
+      )
+    );
   const resetting = codexResetting || claudeResetting;
   const actionsBlocked = !canRefresh || loading || Boolean(entry.file.disabled);
   const plan = ledgerPlanLabel(entry.type, quota, t);
@@ -249,6 +267,7 @@ function LedgerRow({
             controls={resetsId}
             showEmails={showEmails}
             now={now}
+            unresolved={unresolvedClaim}
             // The drawer that started a reset stays open until it settles.
             onToggle={() => setResetsOpen(resetting || !resetsOpen)}
           />

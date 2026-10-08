@@ -47,6 +47,8 @@ type ChipProps = {
   controls: string;
   showEmails: boolean;
   now: number;
+  /** A Claude claim's outcome is unknown; its retry lives in the drawer. */
+  unresolved?: boolean;
   onToggle: () => void;
 };
 
@@ -57,13 +59,17 @@ export function QuotaLedgerResetsChip({
   controls,
   showEmails,
   now,
+  unresolved = false,
   onToggle,
 }: ChipProps) {
   const { t } = useTranslation();
   const items = inventory?.items ?? [];
   const count = countResets(items);
+  // An open drawer or an unresolved claim keeps the toggle, so the drawer can be closed
+  // through a refresh or a failed read and reopened to retry once the last reset is gone.
+  const keepToggle = expanded || unresolved;
 
-  if (!expanded && inventory?.error !== undefined) {
+  if (!keepToggle && inventory?.error !== undefined) {
     const detail = showEmails ? inventory.error : maskQuotaText(inventory.error);
     return (
       <span className={styles.error} title={detail || undefined}>
@@ -71,8 +77,7 @@ export function QuotaLedgerResetsChip({
       </span>
     );
   }
-  // An open drawer keeps its toggle through a refresh or a failed read, so it can be closed.
-  if (!expanded && count === 0) return null;
+  if (!keepToggle && count === 0) return null;
 
   const soonest = items[0]?.expiresAtMs ?? null;
   let text: string;
@@ -92,6 +97,8 @@ export function QuotaLedgerResetsChip({
             count,
             date: formatMonthDay(soonest),
           });
+  } else if (unresolved) {
+    text = t('quota_management.resets.chip_unresolved');
   } else if (loading) {
     text = t('quota_management.resets.loading');
   } else if (inventory?.error !== undefined || !inventory) {
@@ -99,7 +106,7 @@ export function QuotaLedgerResetsChip({
   } else {
     text = t('quota_management.resets.empty');
   }
-  const warn = soonest !== null && soonest - now <= EXPIRY_WARNING_MS;
+  const warn = unresolved || (soonest !== null && soonest - now <= EXPIRY_WARNING_MS);
   const title = items
     .map((item) =>
       item.expiresAtMs === null

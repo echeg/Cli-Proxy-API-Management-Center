@@ -1533,6 +1533,7 @@
       "chip_many": "{{count}} lượt đặt lại · lượt gần nhất hết hạn {{date}}",
       "chip_one_open": "1 lượt đặt lại · không có hạn",
       "chip_many_open": "{{count}} lượt đặt lại · không có hạn",
+      "chip_unresolved": "Chưa rõ kết quả đặt lại",
       "title": "Lượt đặt lại",
       "hint": "Các lượt đặt lại chưa dùng sẽ mất khi hết hạn",
       "soonest": "sớm nhất",

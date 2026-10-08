@@ -187,6 +187,17 @@ test('unknown outcome retains request ID across retries; expiry blocks', async (
   expect(h.ids).toHaveLength(2);
 });
 
+test('the journal reports an unresolved claim until a definite outcome', async () => {
+  const h = setup();
+  const operations = createResetGrantOperations(h.deps);
+  expect(operations.hasUnresolved('account')).toBe(false);
+  await expect(operations.run('account', 'a', grant.id)).rejects.toThrow();
+  expect(operations.hasUnresolved('account')).toBe(true);
+  expect(operations.hasUnresolved('other')).toBe(false);
+  h.nextSession();
+  expect(operations.hasUnresolved('account')).toBe(false);
+});
+
 test('fresh spend rechecks eligibility and blocks concurrent clicks', async () => {
   const h = setup();
   h.deps.readStatus = async () => ({ ...status(), eligible: false });

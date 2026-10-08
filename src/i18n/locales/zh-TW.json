@@ -1601,6 +1601,7 @@
       "chip_many": "{{count}} 次重設 · 最近 {{date}} 到期",
       "chip_one_open": "1 次重設 · 無到期時間",
       "chip_many_open": "{{count}} 次重設 · 無到期時間",
+      "chip_unresolved": "重設結果未知",
       "title": "重設",
       "hint": "未使用的重設到期後將失效",
       "soonest": "最早到期",

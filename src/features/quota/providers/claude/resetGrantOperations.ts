@@ -8,6 +8,11 @@ import {
 } from '@/services/api/claudeResetGrants';
 
 export const RETRY_WINDOW_MS = 10 * 60 * 1000;
+
+/** Journal key of one credential's claims. */
+export const claudeResetOperationKey = (name: string, authIndex: string | null): string =>
+  JSON.stringify([name, authIndex]);
+
 type Operation = {
   grantId: string;
   organization: string;
@@ -44,6 +49,12 @@ export function createResetGrantOperations(deps = defaultDependencies) {
     inspect(key: string) {
       syncSession();
       return operations.get(key);
+    },
+    /** A claim was sent but its outcome is unknown, so only the same-claim retry may follow. */
+    hasUnresolved(key: string) {
+      syncSession();
+      const operation = operations.get(key);
+      return Boolean(operation && !operation.code);
     },
     async run(key: string, authIndex: string, grantId: string) {
       const session = syncSession();

@@ -43,6 +43,8 @@ import {
   classifyQuotaFiles,
   filterEntriesByTab,
   filterEntriesBySearch,
+  hasQuotaReserve,
+  mergeQuotaReserveVerdicts,
   paginate,
   sortQuotaEntries,
   type QuotaFileEntry,
@@ -124,6 +126,28 @@ export function QuotaPage() {
       if (isCurrent()) setLoading(false);
     }
   }, [connectionStatus, sessionGeneration, t]);
+
+  // A management quota probe updates the backend's reserve verdict, so re-read it afterwards.
+  // A newer list load or session wins; a failed read keeps the last verdict.
+  const verdictRequestRef = useRef(0);
+  const reloadReserveVerdicts = useCallback(async () => {
+    if (connectionStatus !== 'connected') return;
+    const requestId = ++verdictRequestRef.current;
+    const listId = listRequestRef.current;
+    try {
+      const data = await authFilesApi.list();
+      if (
+        requestId !== verdictRequestRef.current ||
+        listId !== listRequestRef.current ||
+        sessionGeneration !== useQuotaStore.getState().cacheGeneration
+      ) {
+        return;
+      }
+      setFiles((current) => mergeQuotaReserveVerdicts(current, data?.files || []));
+    } catch {
+      // The badge keeps the verdict from the last list read.
+    }
+  }, [connectionStatus, sessionGeneration]);
 
   /* Quota caches provide the recovery instants used by display sorting. */
 
@@ -241,9 +265,17 @@ export function QuotaPage() {
   /* Loading and quota actions. */
 
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
+  // Shared by every view, so a Cards action cannot leave a stale verdict for the Ledger.
+  const afterQuotaProbe = useCallback(
+    (file: AuthFileItem) => {
+      if (file.quotaReserve) void reloadReserveVerdicts();
+    },
+    [reloadReserveVerdicts]
+  );
   const { resettingKeys, refreshQuota, resetQuota, performReset } = useQuotaActions(
     disableControls,
-    formatDisplayText
+    formatDisplayText,
+    afterQuotaProbe
   );
 
   const refreshRef = useRef<{ generation: number; promise: Promise<void> } | null>(null);
@@ -265,6 +297,7 @@ export function QuotaPage() {
         }
         // Refresh all credentials, independent of filters and pagination.
         await loadQuota(classifyQuotaFiles(loadedFiles));
+        if (hasQuotaReserve(loadedFiles)) await reloadReserveVerdicts();
       })(),
     };
     refreshRef.current = pending;
@@ -272,7 +305,7 @@ export function QuotaPage() {
       if (refreshRef.current === pending) refreshRef.current = null;
     });
     return pending.promise;
-  }, [loadFiles, loadQuota, sessionGeneration]);
+  }, [loadFiles, loadQuota, reloadReserveVerdicts, sessionGeneration]);
 
   useHeaderRefresh(handleRefreshAll);
 
@@ -285,6 +318,9 @@ export function QuotaPage() {
   }, [handleRefreshAll]);
 
   const canUseActions = !disableControls && !loading && filesGeneration === sessionGeneration;
+  // Skeletons only stand in for a session's first list; a later refresh keeps the view mounted,
+  // so open Ledger drawers show their loading state instead of closing.
+  const initialLoading = loading && filesGeneration !== sessionGeneration;
 
   /* Animate cards once. Newly mounted cards after navigation do not replay. */
 
@@ -303,7 +339,7 @@ export function QuotaPage() {
 
   /* Rendering. */
 
-  const isEmpty = !loading && filteredEntries.length === 0;
+  const isEmpty = !initialLoading && filteredEntries.length === 0;
 
   return (
     <div className={styles.page} ref={revealRef}>
@@ -397,7 +433,7 @@ export function QuotaPage() {
           </div>
         )}
 
-        {loading ? (
+        {initialLoading ? (
           <div className={styles.grid} aria-hidden="true">
             {Array.from({ length: SKELETON_CARD_COUNT }, (_, index) => (
               <Skeleton key={index} height={168} rounded={14} />
@@ -470,7 +506,7 @@ export function QuotaPage() {
           </div>
         )}
 
-        {!loading && filteredEntries.length > QUOTA_PAGE_SIZE && (
+        {!initialLoading && filteredEntries.length > QUOTA_PAGE_SIZE && (
           <div className={styles.pagination}>
             <Button
               variant="secondary"

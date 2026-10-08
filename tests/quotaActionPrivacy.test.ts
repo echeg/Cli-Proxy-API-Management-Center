@@ -11,10 +11,10 @@ const file = { name: 'codex-alice@example.com.json', type: 'codex' } as AuthFile
 const hideEmail = (value: string) => value.replaceAll('alice@example.com', 'hidden-account');
 const quota = { windows: [] };
 
-function renderActions() {
+function renderActions(afterProbe?: (file: AuthFileItem) => void) {
   let actions: ReturnType<typeof useQuotaActions> | undefined;
   function Harness() {
-    actions = useQuotaActions(false, hideEmail);
+    actions = useQuotaActions(false, hideEmail, afterProbe);
     return null;
   }
   renderToStaticMarkup(createElement(Harness));
@@ -85,6 +85,36 @@ describe('quota action privacy', () => {
       const feedback = useNotificationStore.getState().notifications.at(-1)?.message;
       expect(feedback).toContain('hidden-account');
       expect(feedback).not.toContain('alice@example.com');
+    }
+  );
+});
+
+describe('quota action follow-up', () => {
+  test.each([false, true])(
+    'Cards refresh and modal reset notify the page once they settle (failed=%s)',
+    async (failed) => {
+      const probed: AuthFileItem[] = [];
+      const adapter: QuotaAdapter = {
+        ...QUOTA_ADAPTERS.codex,
+        enrichQuota: undefined,
+        fetchQuota: async () => {
+          if (failed) throw new Error('Refresh failed');
+          return quota;
+        },
+        resetQuota: async () => {
+          if (failed) throw new Error('Reset failed');
+          return quota;
+        },
+      };
+      const actions = renderActions((probedFile) => probed.push(probedFile));
+
+      await actions.refreshQuota(file, adapter);
+      expect(probed).toEqual([file]);
+
+      actions.resetQuota(file, adapter);
+      expect(probed).toHaveLength(1);
+      await useNotificationStore.getState().confirmation.options?.onConfirm();
+      expect(probed).toEqual([file, file]);
     }
   );
 });

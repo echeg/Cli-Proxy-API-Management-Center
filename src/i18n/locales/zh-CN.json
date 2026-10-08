@@ -1575,6 +1575,7 @@
       "chip_many": "{{count}} 次重置 · 最近 {{date}} 到期",
       "chip_one_open": "1 次重置 · 无到期时间",
       "chip_many_open": "{{count}} 次重置 · 无到期时间",
+      "chip_unresolved": "重置结果未知",
       "title": "重置",
       "hint": "未使用的重置到期后将失效",
       "soonest": "最早到期",

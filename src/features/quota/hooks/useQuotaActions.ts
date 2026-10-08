@@ -21,7 +21,8 @@ const unchangedName = (name: string) => name;
 
 export function useQuotaActions(
   disableControls: boolean,
-  displayNameFor: (name: string) => string = unchangedName
+  displayNameFor: (name: string) => string = unchangedName,
+  afterProbe?: (file: AuthFileItem) => void
 ) {
   const { t } = useTranslation();
   const showNotification = useNotificationStore((state) => state.showNotification);
@@ -42,6 +43,11 @@ export function useQuotaActions(
     // Pending responses must use the current privacy choice when they finish.
     displayNameRef.current = displayNameFor;
   }, [displayNameFor]);
+  // Every view's refresh and reset settle here, so follow-up reads cannot depend on the view.
+  const afterProbeRef = useRef(afterProbe);
+  useEffect(() => {
+    afterProbeRef.current = afterProbe;
+  }, [afterProbe]);
 
   const refreshQuota = useCallback(
     async (file: AuthFileItem, adapter: QuotaAdapter) => {
@@ -88,6 +94,7 @@ export function useQuotaActions(
           );
         });
       }
+      afterProbeRef.current?.(file);
     },
     [disableControls, showNotification, t]
   );
@@ -116,7 +123,7 @@ export function useQuotaActions(
         displayName: (name) => displayNameRef.current(name),
         captureGeneration: captureQuotaCacheGeneration,
         commitIfCurrent: commitIfQuotaCacheCurrent,
-      }),
+      }).finally(() => afterProbeRef.current?.(file)),
     [setResetting, showNotification, t]
   );
 

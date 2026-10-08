@@ -6,7 +6,9 @@ import {
   classifyQuotaFiles,
   filterEntriesByTab,
   filterEntriesBySearch,
+  hasQuotaReserve,
   isQuotaRefreshDisabled,
+  mergeQuotaReserveVerdicts,
   paginate,
   resolveQuotaProviderType,
   sortQuotaEntries,
@@ -249,5 +251,44 @@ describe('sortQuotaEntries', () => {
     const last = entries[entries.length - 1].file.name;
     const sorted = sortQuotaEntries(entries, 'soonest', resolver({ [last]: 1 }));
     expect(paginate(sorted, 1, 2).pageItems[0].file.name).toBe(last);
+  });
+});
+
+describe('reserve verdict reload', () => {
+  const reserve = { percent: 25, mode: 'hard' as const };
+  const held = file('codex-a.json', 'codex', {
+    quotaReserve: reserve,
+    quotaReserveActive: true,
+    quotaReserveUntil: '2100-10-14T00:00:00Z',
+  });
+
+  test('only credentials with a reserve need a verdict reload', () => {
+    expect(hasQuotaReserve(FILES)).toBe(false);
+    expect(hasQuotaReserve([...FILES, held])).toBe(true);
+  });
+
+  test('copies the fresh verdict onto the matching credential and keeps the rest', () => {
+    const other = file('claude-a.json', 'claude');
+    const current = [held, other];
+    const fresh = [
+      file('codex-a.json', 'codex', { quotaReserve: reserve, quotaReserveActive: false }),
+      file('codex-new.json', 'codex', { quotaReserve: reserve }),
+    ];
+    const merged = mergeQuotaReserveVerdicts(current, fresh);
+    expect(merged.map((item) => item.name)).toEqual(['codex-a.json', 'claude-a.json']);
+    expect(merged[0]).toMatchObject({ quotaReserveActive: false, quotaReserveUntil: undefined });
+    expect(merged[1]).toBe(other);
+  });
+
+  test('drops a reserve cleared elsewhere', () => {
+    const merged = mergeQuotaReserveVerdicts([held], [file('codex-a.json', 'codex')]);
+    expect(merged[0].quotaReserve).toBeUndefined();
+    expect(merged[0].quotaReserveActive).toBeUndefined();
+  });
+
+  test('returns the current list when no verdict changed', () => {
+    const current = [held];
+    expect(mergeQuotaReserveVerdicts(current, [{ ...held }])).toBe(current);
+    expect(mergeQuotaReserveVerdicts(current, [])).toBe(current);
   });
 });

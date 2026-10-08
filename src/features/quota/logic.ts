@@ -4,6 +4,7 @@
  */
 
 import type { AuthFileItem } from '@/types';
+import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { ANTIGRAVITY_CONFIG } from './providers/antigravity/data';
 import { CLAUDE_CONFIG } from './providers/claude/data';
 import { CODEX_CONFIG } from './providers/codex/data';
@@ -40,6 +41,43 @@ export function canRefreshQuotaAfterList(
   return (
     !disabled && !hasError && requestedSession === currentSession && filesSession === currentSession
   );
+}
+
+/** Credentials whose reserve verdict a quota probe can change. */
+export const hasQuotaReserve = (files: readonly AuthFileItem[]): boolean =>
+  files.some((file) => file.quotaReserve !== undefined);
+
+/**
+ * Copies the backend's reserve config and verdict from a fresh credential list onto the
+ * current one. A quota probe updates the verdict without changing which credentials exist,
+ * so the list keeps its entries; it returns `current` itself when nothing changed.
+ */
+export function mergeQuotaReserveVerdicts(
+  current: AuthFileItem[],
+  fresh: readonly AuthFileItem[]
+): AuthFileItem[] {
+  const byKey = new Map(fresh.map((file) => [getQuotaCacheKey(file), file]));
+  let changed = false;
+  const merged = current.map((file) => {
+    const next = byKey.get(getQuotaCacheKey(file));
+    if (
+      !next ||
+      (next.quotaReserve?.percent === file.quotaReserve?.percent &&
+        next.quotaReserve?.mode === file.quotaReserve?.mode &&
+        next.quotaReserveActive === file.quotaReserveActive &&
+        next.quotaReserveUntil === file.quotaReserveUntil)
+    ) {
+      return file;
+    }
+    changed = true;
+    return {
+      ...file,
+      quotaReserve: next.quotaReserve,
+      quotaReserveActive: next.quotaReserveActive,
+      quotaReserveUntil: next.quotaReserveUntil,
+    };
+  });
+  return changed ? merged : current;
 }
 
 export const resolveQuotaProviderType = (file: AuthFileItem): QuotaProviderType | null =>

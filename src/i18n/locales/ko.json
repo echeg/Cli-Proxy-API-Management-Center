@@ -1576,6 +1576,7 @@
       "chip_many": "초기화 {{count}}회 · 가장 빠른 만료 {{date}}",
       "chip_one_open": "초기화 1회 · 만료 없음",
       "chip_many_open": "초기화 {{count}}회 · 만료 없음",
+      "chip_unresolved": "초기화 결과 알 수 없음",
       "title": "초기화",
       "hint": "사용하지 않은 초기화는 만료되면 사라집니다",
       "soonest": "가장 빠름",

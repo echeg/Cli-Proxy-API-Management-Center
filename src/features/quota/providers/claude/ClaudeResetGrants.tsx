@@ -11,7 +11,11 @@ import {
 import type { AuthFileItem } from '@/types';
 import { normalizeAuthIndex } from '@/utils/quota';
 import { runClaudeClaim } from './claimCooldown';
-import { resetGrantOperations, RETRY_WINDOW_MS } from './resetGrantOperations';
+import {
+  claudeResetOperationKey,
+  resetGrantOperations,
+  RETRY_WINDOW_MS,
+} from './resetGrantOperations';
 import { resetGrantBlockReason, selectResetGrant } from './selectResetGrant';
 
 /** Card-owned reads; the session-scoped journal owns spending and ambiguous retries. */
@@ -32,7 +36,7 @@ export function useClaudeResetGrants(
   const showNotification = useNotificationStore((state) => state.showNotification);
   const now = useNow();
   const authIndex = normalizeAuthIndex(file.auth_index ?? file.authIndex);
-  const key = JSON.stringify([file.name, authIndex]);
+  const key = claudeResetOperationKey(file.name, authIndex);
   const [status, setStatus] = useState<AnthropicResetGrantStatus | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -86,10 +90,7 @@ export function useClaudeResetGrants(
         authIndex,
         revision: session,
         isCurrent: current,
-        hasUnresolvedClaim: () => {
-          const unresolved = resetGrantOperations.inspect(key);
-          return Boolean(unresolved && !unresolved.code);
-        },
+        hasUnresolvedClaim: () => resetGrantOperations.hasUnresolved(key),
         notify: showNotification,
         t,
       });
