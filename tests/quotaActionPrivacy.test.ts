@@ -94,10 +94,12 @@ describe('quota action follow-up', () => {
     'Cards refresh and modal reset notify the page once they settle (failed=%s)',
     async (failed) => {
       const probed: AuthFileItem[] = [];
+      let fetches = 0;
       const adapter: QuotaAdapter = {
         ...QUOTA_ADAPTERS.codex,
         enrichQuota: undefined,
         fetchQuota: async () => {
+          fetches += 1;
           if (failed) throw new Error('Refresh failed');
           return quota;
         },
@@ -114,7 +116,10 @@ describe('quota action follow-up', () => {
       actions.resetQuota(file, adapter);
       expect(probed).toHaveLength(1);
       await useNotificationStore.getState().confirmation.options?.onConfirm();
+      // A failed reset re-reads quota and reports one probe once that reload settles.
+      await new Promise((resolve) => setTimeout(resolve, 0));
       expect(probed).toEqual([file, file]);
+      expect(fetches).toBe(failed ? 2 : 1);
     }
   );
 });

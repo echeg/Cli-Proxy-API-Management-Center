@@ -50,7 +50,7 @@ export function useQuotaActions(
   }, [afterProbe]);
 
   const refreshQuota = useCallback(
-    async (file: AuthFileItem, adapter: QuotaAdapter) => {
+    async (file: AuthFileItem, adapter: QuotaAdapter, options?: { silent?: boolean }) => {
       if (disableControls || file.disabled) return;
       const cacheKey = getQuotaCacheKey(file);
       if (resettingRef.current.has(cacheKey)) return;
@@ -72,6 +72,7 @@ export function useQuotaActions(
             [cacheKey]: successState,
           }));
           void enrichQuotaInBackground(adapter, file, data, successState, t);
+          if (options?.silent) return;
           showNotification(
             t('auth_files.quota_refresh_success', { name: displayNameRef.current(file.name) }),
             'success'
@@ -111,8 +112,9 @@ export function useQuotaActions(
   );
 
   const runReset = useCallback(
-    (file: AuthFileItem, adapter: QuotaAdapter, resetQuotaFn: QuotaResetFn) =>
-      executeQuotaReset({
+    (file: AuthFileItem, adapter: QuotaAdapter, resetQuotaFn: QuotaResetFn) => {
+      let reloading = false;
+      return executeQuotaReset({
         file,
         adapter,
         resetQuotaFn,
@@ -123,8 +125,17 @@ export function useQuotaActions(
         displayName: (name) => displayNameRef.current(name),
         captureGeneration: captureQuotaCacheGeneration,
         commitIfCurrent: commitIfQuotaCacheCurrent,
-      }).finally(() => afterProbeRef.current?.(file)),
-    [setResetting, showNotification, t]
+        // A stale available count must not offer to spend another reset.
+        reloadAfterFailure: () => {
+          reloading = true;
+          void refreshQuota(file, adapter, { silent: true });
+        },
+      }).finally(() => {
+        // The reload reports its own probe once the fresh quota settles.
+        if (!reloading) afterProbeRef.current?.(file);
+      });
+    },
+    [refreshQuota, setResetting, showNotification, t]
   );
 
   const resetQuota = useCallback(

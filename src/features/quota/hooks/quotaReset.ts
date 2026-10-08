@@ -36,6 +36,8 @@ export interface QuotaResetDeps<G> {
   displayName: (name: string) => string;
   captureGeneration: (name: string) => G;
   commitIfCurrent: (generation: G, commit: () => void) => boolean;
+  /** Re-reads quota after a failure; the redemption may have landed before the error. */
+  reloadAfterFailure?: () => void;
 }
 
 /** Resolves true only when the success state was committed for the current cache generation. */
@@ -44,6 +46,7 @@ export async function executeQuotaReset<G>(deps: QuotaResetDeps<G>): Promise<boo
   const cacheKey = getQuotaCacheKey(file);
   const cacheGeneration = deps.captureGeneration(file.name);
   deps.setResetting(cacheKey, true);
+  let reloadAfterFailure = false;
   try {
     const data = await deps.resetQuotaFn(file, t);
     return deps.commitIfCurrent(cacheGeneration, () => {
@@ -55,7 +58,7 @@ export async function executeQuotaReset<G>(deps: QuotaResetDeps<G>): Promise<boo
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : t('common.unknown_error');
-    deps.commitIfCurrent(cacheGeneration, () => {
+    reloadAfterFailure = deps.commitIfCurrent(cacheGeneration, () => {
       notify(
         t('codex_quota.reset_failed', {
           name: displayName(file.name),
@@ -67,5 +70,7 @@ export async function executeQuotaReset<G>(deps: QuotaResetDeps<G>): Promise<boo
     return false;
   } finally {
     deps.setResetting(cacheKey, false);
+    // After the in-flight flag clears, so the reload is not skipped as a concurrent probe.
+    if (reloadAfterFailure) deps.reloadAfterFailure?.();
   }
 }

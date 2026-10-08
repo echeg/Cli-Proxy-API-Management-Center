@@ -120,6 +120,32 @@ describe('executeQuotaReset', () => {
     expect(ctx.notifications).toEqual([]);
   });
 
+  test('reloads quota after a current failure, once the in-flight flag clears', async () => {
+    const reloads: string[][] = [];
+    const ctx = setup({
+      resetQuotaFn: async () => {
+        throw new Error('codex_quota.reset_cooldown_failed');
+      },
+    });
+    ctx.deps.reloadAfterFailure = () => reloads.push(ctx.resetting());
+    await executeQuotaReset(ctx.deps);
+    expect(reloads).toEqual([[]]);
+  });
+
+  test('skips the reload after success or a stale-generation failure', async () => {
+    let reloads = 0;
+    const ok = setup({ reloadAfterFailure: () => (reloads += 1) });
+    await executeQuotaReset(ok.deps);
+
+    const stale = setup({ reloadAfterFailure: () => (reloads += 1) });
+    stale.deps.resetQuotaFn = async () => {
+      stale.bumpGeneration();
+      throw new Error('offline');
+    };
+    await executeQuotaReset(stale.deps);
+    expect(reloads).toBe(0);
+  });
+
   test('sets the resetting key during the call and clears it in finally', async () => {
     const ok = setup();
     await executeQuotaReset(ok.deps);
@@ -198,5 +224,9 @@ describe('quota reset wiring contracts', () => {
     expect(actions).toContain('executeQuotaReset({');
     expect(actions).toContain('resetFnIfAllowed(file, adapter, {');
     expect(actions).toMatch(/return \{[^}]*performReset[^}]*\}/);
+  });
+
+  test('a failed reset silently re-reads quota so a spent credit is not offered again', () => {
+    expect(actions).toContain('void refreshQuota(file, adapter, { silent: true });');
   });
 });
