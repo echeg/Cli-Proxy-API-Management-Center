@@ -41,6 +41,7 @@ export type ClaudeResetHandle = {
   blocked: boolean;
   busy: boolean;
   message: string;
+  blockReason?: string;
   buttonLabel: string;
   confirmMessage: string;
   count: number | null;
@@ -93,7 +94,10 @@ export function claudeResetAction(
   const base = {
     blocked: handle.blocked,
     busy: handle.busy,
-    reason: handle.message ? t(`claude_reset.${handle.message}`) : undefined,
+    reason:
+      handle.message || handle.blockReason
+        ? t(`claude_reset.${handle.message || handle.blockReason}`)
+        : undefined,
     onConfirm: () => handle.execute(),
   };
   if (handle.buttonLabel === 'retry') {

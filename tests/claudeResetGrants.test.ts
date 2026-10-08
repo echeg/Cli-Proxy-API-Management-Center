@@ -1,4 +1,7 @@
-import { selectResetGrant } from '../src/features/quota/providers/claude/selectResetGrant';
+import {
+  resetGrantBlockReason,
+  selectResetGrant,
+} from '../src/features/quota/providers/claude/selectResetGrant';
 
 import { afterEach, describe, expect, test } from 'bun:test';
 import {
@@ -339,6 +342,24 @@ test('card selection prefers usable recommendation and has deterministic fallbac
   ]) {
     expect(selectResetGrant({ ...base, grants: [{ ...a, ...changed }] }, 0)).toBeUndefined();
   }
+});
+
+test('resetGrantBlockReason names why no grant can be spent', () => {
+  const base = status();
+  const [a] = base.grants;
+  expect(resetGrantBlockReason({ ...base, atLimit: false }, 0)).toBe('not_limited');
+  expect(resetGrantBlockReason({ ...base, eligible: false }, 0)).toBe('ineligible');
+  expect(resetGrantBlockReason({ ...base, cooldownUntil: new Date(1000).toISOString() }, 0)).toBe(
+    'cooldown'
+  );
+  expect(resetGrantBlockReason({ ...base, grants: [{ ...a, paused: true }] }, 0)).toBe(
+    'unavailable'
+  );
+  expect(
+    resetGrantBlockReason({ ...base, grants: [{ ...a, endsAt: new Date(0).toISOString() }] }, 0)
+  ).toBe('unavailable');
+  // Nothing left to spend: the drawer already says so.
+  expect(resetGrantBlockReason({ ...base, grants: [{ ...a, resetsLeft: 0 }] }, 0)).toBeUndefined();
 });
 
 test('Claude card uses Codex count and action styles and shared confirmation, not a grant dialog', async () => {

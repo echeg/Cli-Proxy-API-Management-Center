@@ -34,7 +34,7 @@ const codexQuota: CodexQuotaState = {
 
 const renderLedger = (
   fileFields: Partial<AuthFileItem>,
-  options: { name?: string; showEmails?: boolean } = {}
+  options: { name?: string; showEmails?: boolean; quota?: CodexQuotaState } = {}
 ) => {
   const entries: QuotaFileEntry[] = [
     {
@@ -46,7 +46,7 @@ const renderLedger = (
     createElement(QuotaLedger, {
       entries,
       summaryEntries: entries,
-      quotaFor: () => codexQuota as QuotaCardState,
+      quotaFor: () => (options.quota ?? codexQuota) as QuotaCardState,
       resolvedTheme: 'light',
       showEmails: options.showEmails ?? true,
       canRefresh: true,
@@ -129,6 +129,25 @@ describe('Ledger quota reserve', () => {
     // Two windows in the row; the provider summary meters carry no tick.
     expect(ticks).toHaveLength(2);
     ticks.forEach((tick) => expect(tick).toContain('left:25%'));
+  });
+
+  test('windows the backend verdict ignores get no tick', () => {
+    const quota: CodexQuotaState = {
+      ...codexQuota,
+      windows: [
+        ...codexQuota.windows,
+        {
+          id: 'code-review-weekly',
+          label: 'Code review weekly limit',
+          usedPercent: 90,
+          resetLabel: '-',
+          resetAtMs: now + DAY,
+        },
+      ],
+    };
+    const markup = renderLedger({ quotaReserve: { percent: 25, mode: 'soft' } }, { quota });
+    expect(markup).toContain('Code review weekly limit');
+    expect(markup.match(/data-reserve-tick/g)).toHaveLength(2);
   });
 
   test('masking still hides the credential email', () => {

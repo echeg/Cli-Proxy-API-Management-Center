@@ -124,6 +124,16 @@ export function ledgerWindows(
   ];
 }
 
+/** The windows the backend's reserve verdict reads (Codex primary/secondary, Claude 5h/7d). */
+const RESERVE_WINDOW_IDS: Partial<Record<QuotaProviderType, readonly string[]>> = {
+  codex: ['five-hour', 'weekly', 'monthly'],
+  claude: ['five-hour', 'seven-day'],
+};
+
+/** Model-specific and additional limits never trip the reserve, so they get no tick. */
+export const reserveCoversWindow = (provider: QuotaProviderType, windowId: string): boolean =>
+  RESERVE_WINDOW_IDS[provider]?.includes(windowId) ?? false;
+
 export function primaryLedgerWindow(windows: LedgerWindow[]): LedgerWindow | undefined {
   return (
     windows.find((window) => window.id === 'seven-day-fable') ??

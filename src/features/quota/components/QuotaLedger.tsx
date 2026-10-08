@@ -14,6 +14,7 @@ import {
   maskQuotaName,
   maskQuotaText,
   primaryLedgerWindow,
+  reserveCoversWindow,
   summarizeLedgerWindows,
 } from '../ledgerModel';
 import type { LedgerWindow } from '../ledgerModel';
@@ -59,7 +60,7 @@ function Meter({ remaining, reserve }: { remaining: number | null; reserve?: num
     </div>
   );
   if (reserve === undefined) return track;
-  // The fill ends left of the tick exactly when the window is below the reserve.
+  // On a window the verdict reads, the fill ends left of the tick when it is below the reserve.
   return (
     <div className={styles.meter}>
       {track}
@@ -260,7 +261,11 @@ function LedgerRow({
             <WindowCell
               key={window.id}
               window={window}
-              reserve={entry.file.quotaReserve?.percent}
+              reserve={
+                reserveCoversWindow(entry.type, window.id)
+                  ? entry.file.quotaReserve?.percent
+                  : undefined
+              }
               now={now}
             />
           ))

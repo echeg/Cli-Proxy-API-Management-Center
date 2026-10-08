@@ -12,7 +12,7 @@ import type { AuthFileItem } from '@/types';
 import { normalizeAuthIndex } from '@/utils/quota';
 import { runClaudeClaim } from './claimCooldown';
 import { resetGrantOperations, RETRY_WINDOW_MS } from './resetGrantOperations';
-import { selectResetGrant } from './selectResetGrant';
+import { resetGrantBlockReason, selectResetGrant } from './selectResetGrant';
 
 /** Card-owned reads; the session-scoped journal owns spending and ambiguous retries. */
 export function useClaudeResetGrants(
@@ -124,6 +124,8 @@ export function useClaudeResetGrants(
     execute,
     confirmMessage,
     message: pending ? (expired ? 'expired' : 'unknown') : message,
+    /** Why a loaded status offers no grant to spend; a `claude_reset.*` key. */
+    blockReason: !pending && status && !selected ? resetGrantBlockReason(status, now) : undefined,
     buttonLabel: pending ? 'retry' : 'use',
   };
 }

@@ -473,6 +473,15 @@ describe('Ledger inline reset confirmation', () => {
     expect(action.reason).toBe(t('claude_reset.expired'));
   });
 
+  test('a Claude action blocked by grant status explains why', () => {
+    const action = claudeResetAction(
+      t,
+      claudeHandle({ blocked: true, selectedGrant: undefined, blockReason: 'not_limited' }),
+      { showEmails: true }
+    );
+    expect(action.reason).toBe(t('claude_reset.not_limited'));
+  });
+
   test('the Claude action spends through the hook execute()', async () => {
     let calls = 0;
     const action = claudeResetAction(
