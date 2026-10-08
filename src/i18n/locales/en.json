@@ -1547,7 +1547,29 @@
   },
   "quota_management": {
     "resets": {
-      "cooldown_failed": "Reset used, but the proxy cooldown was not cleared — clear it manually in Auth Files"
+      "cooldown_failed": "Reset used, but the proxy cooldown was not cleared — clear it manually in Auth Files",
+      "chip_one": "1 reset · expires {{date}}",
+      "chip_many": "{{count}} resets · next expires {{date}}",
+      "chip_one_open": "1 reset · no expiry",
+      "chip_many_open": "{{count}} resets · no expiry",
+      "title": "Resets",
+      "hint": "Unused resets are lost when they expire",
+      "soonest": "soonest",
+      "expires_line": "expires {{date}} · {{relative}}",
+      "no_expiry": "No expiry",
+      "unnamed": "Reset {{index}}",
+      "claude_left": "{{left}} of {{total}} left · clears {{windows}}",
+      "claude_left_only": "{{left}} of {{total}} left",
+      "windows": {
+        "five_hour": "5-hour",
+        "seven_day": "7-day",
+        "seven_day_overage_included": "7-day incl. overage"
+      },
+      "codex_choice_note": "OpenAI chooses which reset is redeemed",
+      "use": "Use a reset…",
+      "load_error": "Couldn't load resets",
+      "loading": "Loading…",
+      "empty": "No resets left"
     },
     "ledger": {
       "view_ledger": "Ledger",

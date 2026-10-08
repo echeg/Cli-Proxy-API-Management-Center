@@ -1546,7 +1546,29 @@
   },
   "quota_management": {
     "resets": {
-      "cooldown_failed": "重置已使用，但代理冷却未清除——请在认证文件中手动清除"
+      "cooldown_failed": "重置已使用，但代理冷却未清除——请在认证文件中手动清除",
+      "chip_one": "1 次重置 · {{date}} 到期",
+      "chip_many": "{{count}} 次重置 · 最近 {{date}} 到期",
+      "chip_one_open": "1 次重置 · 无到期时间",
+      "chip_many_open": "{{count}} 次重置 · 无到期时间",
+      "title": "重置",
+      "hint": "未使用的重置到期后将失效",
+      "soonest": "最早到期",
+      "expires_line": "{{date}} 到期 · {{relative}}",
+      "no_expiry": "无到期时间",
+      "unnamed": "重置 {{index}}",
+      "claude_left": "剩余 {{left}} / {{total}} · 清除 {{windows}}",
+      "claude_left_only": "剩余 {{left}} / {{total}}",
+      "windows": {
+        "five_hour": "5 小时",
+        "seven_day": "7 天",
+        "seven_day_overage_included": "7 天（含超额）"
+      },
+      "codex_choice_note": "由 OpenAI 决定兑换哪一次重置",
+      "use": "使用重置…",
+      "load_error": "无法加载重置",
+      "loading": "加载中…",
+      "empty": "没有剩余的重置"
     },
     "ledger": {
       "view_ledger": "额度账本",

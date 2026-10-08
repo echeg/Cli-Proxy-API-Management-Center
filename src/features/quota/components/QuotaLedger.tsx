@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { IconRefreshCw } from '@/components/ui/icons';
@@ -19,6 +19,8 @@ import {
 import type { LedgerWindow } from '../ledgerModel';
 import type { QuotaFileEntry } from '../logic';
 import type { QuotaCardState } from '../providers';
+import { buildResetInventory } from '../resetInventory';
+import { QuotaLedgerResetsChip, QuotaLedgerResetsDrawer } from './QuotaLedgerResets';
 import styles from './QuotaLedger.module.scss';
 
 type Props = {
@@ -29,6 +31,8 @@ type Props = {
   showEmails: boolean;
   canRefresh: boolean;
   onRefresh: (entry: QuotaFileEntry) => void;
+  /** Pins the clock (SSR tests); defaults to the shared minute clock. */
+  now?: number;
 };
 
 function Meter({ remaining }: { remaining: number | null }) {
@@ -135,6 +139,9 @@ function LedgerRow({
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
+  const [resetsOpen, setResetsOpen] = useState(false);
+  const resetsId = useId();
+  const resets = buildResetInventory(entry.type, quota, now);
   const windows = ledgerWindows(entry.type, quota, t);
   const primary = primaryLedgerWindow(windows);
   const ordered = primary ? [primary, ...windows.filter((window) => window !== primary)] : windows;
@@ -155,6 +162,15 @@ function LedgerRow({
           {label}
         </span>
         <span className={styles.plan}>{plan || getTypeLabel(t, entry.type)}</span>
+        <QuotaLedgerResetsChip
+          inventory={resets}
+          expanded={resetsOpen}
+          loading={loading}
+          controls={resetsId}
+          showEmails={showEmails}
+          now={now}
+          onToggle={() => setResetsOpen(!resetsOpen)}
+        />
       </div>
       <div className={styles.windows}>
         {ordered.length ? (
@@ -194,6 +210,16 @@ function LedgerRow({
       >
         <IconRefreshCw size={15} />
       </Button>
+      {resetsOpen && (
+        <QuotaLedgerResetsDrawer
+          id={resetsId}
+          provider={entry.type}
+          inventory={resets}
+          loading={loading}
+          showEmails={showEmails}
+          now={now}
+        />
+      )}
     </article>
   );
 }
@@ -206,9 +232,11 @@ export function QuotaLedger({
   showEmails,
   canRefresh,
   onRefresh,
+  now: nowProp,
 }: Props) {
   const { t } = useTranslation();
-  const now = useNow();
+  const clock = useNow();
+  const now = nowProp ?? clock;
   const groups = useMemo(
     () =>
       QUOTA_TAB_ORDER.map((provider) => ({

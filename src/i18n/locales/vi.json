@@ -1504,7 +1504,29 @@
   },
   "quota_management": {
     "resets": {
-      "cooldown_failed": "Đã dùng lượt đặt lại, nhưng thời gian chờ của proxy chưa được xóa — hãy xóa thủ công trong File xác thực"
+      "cooldown_failed": "Đã dùng lượt đặt lại, nhưng thời gian chờ của proxy chưa được xóa — hãy xóa thủ công trong File xác thực",
+      "chip_one": "1 lượt đặt lại · hết hạn {{date}}",
+      "chip_many": "{{count}} lượt đặt lại · lượt gần nhất hết hạn {{date}}",
+      "chip_one_open": "1 lượt đặt lại · không có hạn",
+      "chip_many_open": "{{count}} lượt đặt lại · không có hạn",
+      "title": "Lượt đặt lại",
+      "hint": "Các lượt đặt lại chưa dùng sẽ mất khi hết hạn",
+      "soonest": "sớm nhất",
+      "expires_line": "hết hạn {{date}} · {{relative}}",
+      "no_expiry": "Không có hạn",
+      "unnamed": "Lượt đặt lại {{index}}",
+      "claude_left": "Còn {{left}}/{{total}} · xóa giới hạn {{windows}}",
+      "claude_left_only": "Còn {{left}}/{{total}}",
+      "windows": {
+        "five_hour": "5 giờ",
+        "seven_day": "7 ngày",
+        "seven_day_overage_included": "7 ngày (gồm vượt mức)"
+      },
+      "codex_choice_note": "OpenAI sẽ chọn lượt đặt lại được sử dụng",
+      "use": "Dùng một lượt đặt lại…",
+      "load_error": "Không tải được các lượt đặt lại",
+      "loading": "Đang tải…",
+      "empty": "Không còn lượt đặt lại"
     },
     "title": "Quản lý Quota",
     "description": "Theo dõi trạng thái quota OAuth của credential Antigravity, Codex, Claude, Kimi và xAI.",

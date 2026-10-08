@@ -1547,7 +1547,29 @@
   },
   "quota_management": {
     "resets": {
-      "cooldown_failed": "초기화를 사용했지만 프록시 쿨다운이 해제되지 않았습니다 — 인증 파일에서 직접 해제하세요"
+      "cooldown_failed": "초기화를 사용했지만 프록시 쿨다운이 해제되지 않았습니다 — 인증 파일에서 직접 해제하세요",
+      "chip_one": "초기화 1회 · {{date}} 만료",
+      "chip_many": "초기화 {{count}}회 · 가장 빠른 만료 {{date}}",
+      "chip_one_open": "초기화 1회 · 만료 없음",
+      "chip_many_open": "초기화 {{count}}회 · 만료 없음",
+      "title": "초기화",
+      "hint": "사용하지 않은 초기화는 만료되면 사라집니다",
+      "soonest": "가장 빠름",
+      "expires_line": "{{date}} 만료 · {{relative}}",
+      "no_expiry": "만료 없음",
+      "unnamed": "초기화 {{index}}",
+      "claude_left": "{{total}}회 중 {{left}}회 남음 · {{windows}} 초기화",
+      "claude_left_only": "{{total}}회 중 {{left}}회 남음",
+      "windows": {
+        "five_hour": "5시간",
+        "seven_day": "7일",
+        "seven_day_overage_included": "7일(초과 사용 포함)"
+      },
+      "codex_choice_note": "어떤 초기화를 사용할지는 OpenAI가 선택합니다",
+      "use": "초기화 사용…",
+      "load_error": "초기화를 불러오지 못했습니다",
+      "loading": "불러오는 중…",
+      "empty": "남은 초기화 없음"
     },
     "search_label": "계정 검색",
     "search_placeholder": "파일명 또는 이메일로 검색",

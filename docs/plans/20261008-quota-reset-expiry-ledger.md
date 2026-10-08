@@ -174,24 +174,26 @@
 - [x] run `bun test tests/quotaResetExecution.test.ts tests/codexQuotaReset.test.ts` and `bun run verify` - must pass before task 6
 
 ### Task 6: Ledger chip and resets drawer (display)
-- [ ] write failing SSR tests in `tests/quotaLedgerResets.test.ts`, rendering `QuotaLedger` with the new `now` prop and a stub `quotaFor`, plus far-future fixtures:
+- [x] write failing SSR tests in `tests/quotaLedgerResets.test.ts`, rendering `QuotaLedger` with the new `now` prop and a stub `quotaFor`, plus far-future fixtures:
   - chip text "2 resets · next expires 10/23" and "1 reset · expires 10/22"
   - amber modifier class when the soonest expiry is ≤ 3 days away, none otherwise
   - no chip without resets or for other providers
   - muted error line "Couldn't load resets"
   - masking via `maskQuotaText` when `showEmails` is false
   - the `role="group"` count is unchanged versus the existing `tests/quotaLedger.test.ts` expectations
-- [ ] write failing SSR tests for the exported drawer component:
+- [x] write failing SSR tests for the exported drawer component:
   - Codex: header "Resets 2", hint "Unused resets are lost when they expire", one non-interactive line per reset with label, "soonest" tag on the first, "expires MM/DD, HH:mm · in N days" (via `buildResetDisplay`), footer note "OpenAI chooses which reset is redeemed" and a "Use a reset…" button
   - Claude: the grant label plus "1 of 1 left · clears 5-hour + 7-day"
-- [ ] add an optional `now?: number` prop to `QuotaLedger` (default `useNow()`) and pass it down to rows
-- [ ] create `src/features/quota/components/QuotaLedgerResets.tsx` (chip + drawer, using `buildResetInventory`, `buildResetDisplay`, `formatInstantShort` and `maskQuotaText`) and `QuotaLedgerResets.module.scss`. Use theme tokens only (`--amber-10`/`--amber-text` for the warning tone). The drawer uses `grid-column: 1 / -1`; make it work at the ≤700px breakpoint. Do not use `role="group"`.
-- [ ] integrate it into `LedgerRow` (`QuotaLedger.tsx`):
+- [x] add an optional `now?: number` prop to `QuotaLedger` (default `useNow()`) and pass it down to rows
+- [x] create `src/features/quota/components/QuotaLedgerResets.tsx` (chip + drawer, using `buildResetInventory`, `buildResetDisplay`, `formatInstantShort` and `maskQuotaText`) and `QuotaLedgerResets.module.scss`. Use theme tokens only (`--amber-10`/`--amber-text` for the warning tone). The drawer uses `grid-column: 1 / -1`; make it work at the ≤700px breakpoint. Do not use `role="group"`.
+- [x] integrate it into `LedgerRow` (`QuotaLedger.tsx`):
   - the chip goes in `.identity` under the plan label as `<button aria-expanded aria-controls>` with a title listing all dates
   - the drawer is the last grid child, with a local `expanded` state per row
   - while expanded during a refresh the drawer shows a "Loading…" line instead of closing
-  - add the `quota_management.resets.*` display keys in all five locales
-- [ ] run `bun test tests/quotaLedgerResets.test.ts tests/quotaLedger.test.ts` and `bun run verify` - must pass before task 7
+  - add the `quota_management.resets.*` display keys in all five locales (done in all six, including `ko`)
+- [x] run `bun test tests/quotaLedgerResets.test.ts tests/quotaLedger.test.ts` and `bun run verify` - must pass before task 7
+- [x] ➕ ⚠️ bun resolves SCSS module imports to a path string, so CSS-module class names are `undefined` under SSR. The amber tone is therefore `data-tone="warn"` on the chip (styled via `.chip[data-tone='warn']`) instead of a modifier class, and tests assert the attribute.
+- [x] ➕ an open drawer keeps its chip as a toggle during a refresh ("Loading…"), a failed read, or after the last reset is gone ("No resets left"), so it can always be closed. Claude grants count `resetsLeft` toward the chip/header total.
 
 ### Task 7: Inline "Use a reset" action in the drawer
 - [ ] write failing SSR tests for the exported confirmation block and drawer states:

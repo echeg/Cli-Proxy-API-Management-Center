@@ -1572,7 +1572,29 @@
   },
   "quota_management": {
     "resets": {
-      "cooldown_failed": "重設已使用，但代理冷卻未清除——請在驗證檔案中手動清除"
+      "cooldown_failed": "重設已使用，但代理冷卻未清除——請在驗證檔案中手動清除",
+      "chip_one": "1 次重設 · {{date}} 到期",
+      "chip_many": "{{count}} 次重設 · 最近 {{date}} 到期",
+      "chip_one_open": "1 次重設 · 無到期時間",
+      "chip_many_open": "{{count}} 次重設 · 無到期時間",
+      "title": "重設",
+      "hint": "未使用的重設到期後將失效",
+      "soonest": "最早到期",
+      "expires_line": "{{date}} 到期 · {{relative}}",
+      "no_expiry": "無到期時間",
+      "unnamed": "重設 {{index}}",
+      "claude_left": "剩餘 {{left}} / {{total}} · 清除 {{windows}}",
+      "claude_left_only": "剩餘 {{left}} / {{total}}",
+      "windows": {
+        "five_hour": "5 小時",
+        "seven_day": "7 天",
+        "seven_day_overage_included": "7 天（含超額）"
+      },
+      "codex_choice_note": "由 OpenAI 決定兌換哪一次重設",
+      "use": "使用重設…",
+      "load_error": "無法載入重設",
+      "loading": "載入中…",
+      "empty": "沒有剩餘的重設"
     },
     "ledger": {
       "view_ledger": "額度帳本",
