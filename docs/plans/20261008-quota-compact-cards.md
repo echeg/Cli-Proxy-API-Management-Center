@@ -253,7 +253,7 @@
   - set the default view to `'cards'`
   - render the compact grid in Cards mode with `quotaFor`, `showEmails`, `resettingKeys`, `performReset`, `refreshQuota`, `reloadReserveVerdicts`, `now` and the session guards; keep pagination
   - remove the Cards-mode `QuotaTimeline`
-  - grid CSS `repeat(auto-fill, minmax(380px, 1fr))` with `align-items: start` (4 columns at 1800px with the sidebar collapsed)
+  - grid CSS `repeat(auto-fill, minmax(340px, 1fr))` with `align-items: start` (4 columns at 1800px with the sidebar collapsed or expanded)
 - [x] retire `QuotaCard.tsx` (and `QuotaCard.module.scss` if unused). Rewrite the guards that referenced it, keeping their intent:
   - `tests/claudeResetGrants.test.ts` QuotaCard strings → the equivalent card wiring (blocked state and confirm through the shared mount)
   - `tests/quotaResetExecution.test.ts` modal `onReset` guard → the card uses `performReset`; the hook still keeps `showConfirmation({` for any remaining modal caller
@@ -263,14 +263,14 @@
 - [x] ➕ the default lives in `constants.ts` as `DEFAULT_QUOTA_VIEW_MODE`; the old card entrance animation (`cardsAnimated`, `CARD_ENTRANCE_BUDGET_MS`) was removed with `QuotaCard`; `QuotaBody.module.scss` is no longer imported by the page but is kept because `tests/quotaClassContract.test.ts` checks it and it is upstream-owned
 
 ### Task 9: Verify acceptance criteria
-- [ ] verify every Overview requirement:
+- [x] verify every Overview requirement:
   - toolbar replaces both blocks in all views with unchanged save semantics
   - totals strip with resets tile
   - compact cards with chips, windows, ticks, resets box, inline use, refresh
   - inline reserve editor; Auth Files editor still works
   - Cards is the default
   - Ledger and Timeline unaffected
-- [ ] verify the edge cases:
+- [x] verify the edge cases:
   - masking with emails hidden
   - quota loading/error states
   - Claude grant read failure
@@ -279,8 +279,9 @@
   - reserve on an unsupported provider hidden
   - a stored invalid reserve can be removed
   - the toolbar wraps on narrow widths and is usable at ≤700px
-- [ ] run `bun run verify` - tests + lint + build must pass. Fix lint errors and any new warnings in changed files.
-- [ ] confirm every new module has tests that cover its success and error branches: the hooks' pure helpers, the toolbar, `quotaTotalsModel`, the strip, `compactCardModel`, the card, `quotaReserveSave` and the inline editor
+- [x] run `bun run verify` - tests + lint + build must pass. Fix lint errors and any new warnings in changed files.
+- [x] confirm every new module has tests that cover its success and error branches: the hooks' pure helpers, the toolbar, `quotaTotalsModel`, the strip, `compactCardModel`, the card, `quotaReserveSave` and the inline editor
+- [x] ➕ browser check at 1800×1064 against the live backend through a local same-origin preview of `dist/index.html` (no deploy, no reset spent, no reserve saved): with today's 4 accounts all cards sit in one row (bottoms ≤ 813px) with the sidebar expanded or collapsed, toolbar in one 59px row; inline confirm (Codex + Claude) and the reserve editor with tick preview open and cancel with focus restored. Polish found there: card min width 380px → 340px, toolbar shows only the last-selected time (name and hint in the tooltip), and `ResetActionFooter` got a `card` variant without the drawer divider (Codex note moved to the button tooltip)
 
 ### Task 10: [Final] Update documentation
 - [ ] update `README.md` and `README_CN.md` (Quotas rows at about :76-77): a compact default Cards view, the settings toolbar, and reserve editing on the Quota page as well as in Auth Files

@@ -122,6 +122,12 @@
   padding-top: 12px;
   border-top: 1px solid var(--border-color);
 }
+.footerCard {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
 .note {
   font-size: 12px;
   color: var(--text-tertiary);

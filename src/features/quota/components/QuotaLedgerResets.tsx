@@ -194,6 +194,7 @@ export function ResetActionFooter({
   action,
   initialConfirming = false,
   onClose,
+  variant = 'drawer',
 }: {
   provider: QuotaProviderType;
   action: ResetAction;
@@ -201,6 +202,8 @@ export function ResetActionFooter({
   initialConfirming?: boolean;
   /** Called when the confirm step closes after Cancel, Esc or a finished reset. */
   onClose?: () => void;
+  /** `card` drops the drawer divider and moves the Codex note into the button tooltip. */
+  variant?: 'drawer' | 'card';
 }) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(initialConfirming);
@@ -222,8 +225,8 @@ export function ResetActionFooter({
   };
 
   return (
-    <div ref={ref} className={styles.footer}>
-      {provider === 'codex' && (
+    <div ref={ref} className={variant === 'card' ? styles.footerCard : styles.footer}>
+      {provider === 'codex' && variant === 'drawer' && (
         <span className={styles.note}>{t('quota_management.resets.codex_choice_note')}</span>
       )}
       {action.reason && <span className={styles.reason}>{action.reason}</span>}
@@ -243,6 +246,11 @@ export function ResetActionFooter({
           size="sm"
           data-resets-use=""
           disabled={action.blocked}
+          title={
+            provider === 'codex' && variant === 'card'
+              ? t('quota_management.resets.codex_choice_note')
+              : undefined
+          }
           onClick={() => setConfirming(true)}
         >
           {action.label}

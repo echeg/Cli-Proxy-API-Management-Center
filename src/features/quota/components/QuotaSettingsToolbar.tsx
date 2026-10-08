@@ -78,6 +78,7 @@ export function QuotaSettingsToolbar({
         </span>
         <Select
           size="sm"
+          className={styles.strategy}
           value={values?.strategy ?? 'round-robin'}
           options={routing.options}
           ariaLabelledBy={`${id}-strategy`}
@@ -143,6 +144,7 @@ export function QuotaSettingsToolbar({
             <ProviderPill type={provider} resolvedTheme={resolvedTheme} />
             <Select
               size="sm"
+              className={styles.account}
               value={selected}
               options={options}
               ariaLabel={t('quota_management.routing.preferred_account', {
@@ -153,28 +155,30 @@ export function QuotaSettingsToolbar({
                 routing.change({ preferredAccounts: { ...preferred, [provider]: value } })
               }
             />
-            <span
-              className={styles.last}
-              data-last-selected={provider}
-              title={t('quota_management.routing.activity_hint')}
-            >
-              {latestFile && latest && !disabled ? (
-                <time
-                  dateTime={latest.lastSelectedAt}
-                  title={new Date(latest.lastSelectedAt).toLocaleString(i18n.language)}
-                >
-                  {t('quota_management.toolbar.last', {
-                    name: displayName(latestFile),
-                    time: new Date(latest.lastSelectedAt).toLocaleTimeString(i18n.language, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    }),
-                  })}
-                </time>
-              ) : (
-                t(activityStatusKey(disabled, activityState))
-              )}
-            </span>
+            {latestFile && latest && !disabled ? (
+              <time
+                className={styles.last}
+                data-last-selected={provider}
+                dateTime={latest.lastSelectedAt}
+                title={`${t('quota_management.toolbar.last', {
+                  name: displayName(latestFile),
+                  time: new Date(latest.lastSelectedAt).toLocaleString(i18n.language),
+                })} — ${t('quota_management.routing.activity_hint')}`}
+              >
+                {new Date(latest.lastSelectedAt).toLocaleTimeString(i18n.language, {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </time>
+            ) : (
+              <span
+                className={styles.last}
+                data-last-selected={provider}
+                title={t(activityStatusKey(disabled, activityState))}
+              >
+                —
+              </span>
+            )}
           </div>
         );
       })}

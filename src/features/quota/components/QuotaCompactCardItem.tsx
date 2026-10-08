@@ -158,6 +158,7 @@ export function QuotaCompactCardItem({
     resetAction = (
       <ResetActionFooter
         provider="codex"
+        variant="card"
         action={codexResetAction(t, count, {
           blocked: blocked || resetting,
           busy: codexResetting,
@@ -181,6 +182,7 @@ export function QuotaCompactCardItem({
           {(action) => (
             <ResetActionFooter
               provider="claude"
+              variant="card"
               action={action}
               initialConfirming
               onClose={disarm}

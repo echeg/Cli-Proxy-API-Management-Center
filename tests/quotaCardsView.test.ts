@@ -28,7 +28,7 @@ describe('compact Cards view', () => {
 
   test('the grid fits four cards on a wide screen and sizes cards to content', () => {
     const grid = styles.slice(styles.indexOf('.grid {'));
-    expect(grid).toContain('repeat(auto-fill, minmax(380px, 1fr))');
+    expect(grid).toContain('repeat(auto-fill, minmax(340px, 1fr))');
     expect(grid).toContain('align-items: start');
   });
 });
