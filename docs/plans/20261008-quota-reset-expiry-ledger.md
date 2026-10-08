@@ -260,8 +260,8 @@
 - [x] ➕ verification notes: `upstream/main` is an ancestor of HEAD; `bun run verify` passed (1675 tests, 0 fail, lint + build OK) and ESLint reports no warnings on the 73 changed files; `quota_management.resets.*`, `quota_management.reserve.*`, `auth_files.reserve.*` and `claude_reset.*` have matching keys and `{{tokens}}` in all six locales; at ≤700px the drawer takes grid row 3 full width below the windows and its actions left-align. The pre-existing ru/zh-TW gaps (also on `upstream/main`) are filed in `docs/backlog/locale-gaps-plugin-resource-ru.md`.
 
 ### Task 11: [Final] Update documentation
-- [ ] update `README.md` (and `README_CN.md` if it has the same row) in the Quotas feature row to mention subscription resets with expiry and inline use, and the per-credential quota reserve (Auth Files editor, Ledger badge)
-- [ ] update `AGENTS.md` only if a new pattern needs documenting (for example, "Ledger renders resets through `resetInventory.ts` and its own SCSS module; do not bind `QuotaBody` classes there"). If `AGENTS.md` changes, sync the local `CLAUDE.md` when present.
+- [x] update `README.md` (and `README_CN.md` if it has the same row) in the Quotas feature row to mention subscription resets with expiry and inline use, and the per-credential quota reserve (Auth Files editor, Ledger badge)
+- [x] (no change needed - the Ledger/resetInventory split is a quota-feature detail and AGENTS.md avoids feature implementation details; CLAUDE.md not touched) update `AGENTS.md` only if a new pattern needs documenting (for example, "Ledger renders resets through `resetInventory.ts` and its own SCSS module; do not bind `QuotaBody` classes there"). If `AGENTS.md` changes, sync the local `CLAUDE.md` when present.
 
 ## Technical Details
 - **Types**
