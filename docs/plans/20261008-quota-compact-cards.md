@@ -193,23 +193,24 @@
 - [x] ➕ moved the meter/badge rules into `QuotaReserveVisuals.module.scss` and changed Ledger's `.segments .track` to `.segments > *`, since the shared meter's hashed class no longer matches the Ledger module's `.track`; added a button variant of `ReserveBadge` (`onClick`, `aria-expanded`) for the card editor
 
 ### Task 5: Compact card model and card display
-- [ ] write failing tests in `tests/compactCardModel.test.ts` for `buildCompactCardModel(entry, quota, t, nowMs)`:
+- [x] write failing tests in `tests/compactCardModel.test.ts` for `buildCompactCardModel(entry, quota, t, nowMs)`:
   - provider, masked/unmasked name
   - plan label (`ledgerPlanLabel`)
   - Codex renewal (`subscriptionActiveUntil` → date + relative) and credit balance/unlimited chips
   - window rows from `ledgerWindows` with remaining%, tone (high/mid/low), reset absolute + relative
   - the reset inventory items (expired dropped, soonest first)
   - states loading / error (masked text) / idle
-- [ ] write failing SSR tests in `tests/quotaCompactCard.test.ts` with `now` and stub data for one Codex and one Claude card:
+- [x] write failing SSR tests in `tests/quotaCompactCard.test.ts` with `now` and stub data for one Codex and one Claude card:
   - pill, name, chips including the reserve badge, window rows with mono metas and reserve ticks
   - "Resets expire" box listing every reset with "expires MM/DD, HH:mm · in N days" and `data-soonest` on the first; the GMT label for Codex; Claude rows show the grant label + "1/1"
   - no resets → no box
   - read error → a muted line
   - footer: "Use a reset…" only when resets exist, plus refresh
   - no `role="group"`
-- [ ] implement `src/features/quota/compactCardModel.ts` and `components/QuotaCompactCard.tsx` + `QuotaCompactCard.module.scss`. Imitate the Auth Files card language: 14px radius card, provider pill via `getTypeColor`, 11.5px mono metas, quota box, 4px bars. Use theme tokens only; no `bindQuotaClasses`; `data-*` states.
-- [ ] add the `quota_management.compact.*` display keys in all six locales
-- [ ] run `bun test tests/compactCardModel.test.ts tests/quotaCompactCard.test.ts` and `bun run verify` - must pass before task 6
+- [x] implement `src/features/quota/compactCardModel.ts` and `components/QuotaCompactCard.tsx` + `QuotaCompactCard.module.scss`. Imitate the Auth Files card language: 14px radius card, provider pill via `getTypeColor`, 11.5px mono metas, quota box, 4px bars. Use theme tokens only; no `bindQuotaClasses`; `data-*` states.
+- [x] add the `quota_management.compact.*` display keys in all six locales
+- [x] run `bun test tests/compactCardModel.test.ts tests/quotaCompactCard.test.ts` and `bun run verify` - must pass before task 6
+- [x] ➕ the footer "Use a reset…" action is a `resetAction` slot filled in Task 6; the card also takes `onReserveClick`/`reserveEditor`/`reservePreview` slots for Task 7
 
 ### Task 6: Inline "Use a reset" in the card
 - [ ] write failing SSR tests:

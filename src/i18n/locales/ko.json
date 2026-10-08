@@ -1557,6 +1557,13 @@
     }
   },
   "quota_management": {
+    "compact": {
+      "enabled": "사용 중",
+      "disabled": "사용 중지",
+      "set_reserve": "예약 설정…",
+      "resets_title": "초기화 만료",
+      "resets_title_tz": "초기화 만료 ({{timezone}})"
+    },
     "totals": {
       "title": "할당량 합계",
       "of_capacity": "/ {{capacity}}%",

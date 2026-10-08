@@ -1514,6 +1514,13 @@
     "precise_save_recovery_required": "Không thể đọc lại kết quả lưu. Đã tạm dừng chỉnh sửa. Lưu lại để khôi phục mốc cơ sở của bản nháp, hoặc tải lại cấu hình."
   },
   "quota_management": {
+    "compact": {
+      "enabled": "Đã bật",
+      "disabled": "Đã tắt",
+      "set_reserve": "Đặt mức dự trữ…",
+      "resets_title": "Lượt đặt lại hết hạn",
+      "resets_title_tz": "Lượt đặt lại hết hạn ({{timezone}})"
+    },
     "totals": {
       "title": "Tổng hạn mức",
       "of_capacity": "trên {{capacity}}%",

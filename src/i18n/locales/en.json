@@ -1557,6 +1557,13 @@
     }
   },
   "quota_management": {
+    "compact": {
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "set_reserve": "Set reserve…",
+      "resets_title": "Resets expire",
+      "resets_title_tz": "Resets expire ({{timezone}})"
+    },
     "totals": {
       "title": "Quota totals",
       "of_capacity": "of {{capacity}}%",

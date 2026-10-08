@@ -1582,6 +1582,13 @@
     }
   },
   "quota_management": {
+    "compact": {
+      "enabled": "已啟用",
+      "disabled": "已停用",
+      "set_reserve": "設定預留…",
+      "resets_title": "重置到期",
+      "resets_title_tz": "重置到期（{{timezone}}）"
+    },
     "totals": {
       "title": "額度匯總",
       "of_capacity": "共 {{capacity}}%",
