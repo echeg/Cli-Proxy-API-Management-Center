@@ -10,6 +10,7 @@ import {
 } from '@/services/api/claudeResetGrants';
 import type { AuthFileItem } from '@/types';
 import { normalizeAuthIndex } from '@/utils/quota';
+import { clearClaudeCooldownAfterClaim } from './claimCooldown';
 import { resetGrantOperations, RETRY_WINDOW_MS } from './resetGrantOperations';
 import { selectResetGrant } from './selectResetGrant';
 
@@ -67,48 +68,57 @@ export function useClaudeResetGrants(
   const expired = Boolean(pending && now - pending.createdAt >= RETRY_WINDOW_MS);
   const selected = pending?.grantId ?? (status ? selectResetGrant(status, now)?.id : undefined);
   const blocked = disabled || !sessionActive || !authIndex || busy || expired || !selected;
+  const confirmMessage = t(pending ? 'claude_reset.retry_confirm' : 'claude_reset.confirm_text', {
+    name: displayName,
+  });
+  /** Spends without a dialog; callers own the confirmation step. */
+  const execute = async (version = generation.current) => {
+    if (blocked || !selected || !authIndex) return;
+    const current = () =>
+      session === apiClient.getConnectionRevision() && version === generation.current;
+    if (!current() || lock.current || useAuthStore.getState().connectionStatus !== 'connected')
+      return;
+    lock.current = true;
+    setBusy(true);
+    try {
+      const answer = await resetGrantOperations.run(key, authIndex, selected);
+      if (!current()) return;
+      const cooldown = await clearClaudeCooldownAfterClaim(authIndex, answer, session);
+      if (!current()) return;
+      showNotification(
+        t(`claude_reset.${answer.unresolved ? 'unknown' : answer.code}`),
+        !answer.unresolved && (answer.code === 'reset' || answer.code === 'already_used')
+          ? 'success'
+          : 'error'
+      );
+      if (cooldown === 'failed') {
+        showNotification(t('quota_management.resets.cooldown_failed'), 'warning');
+      }
+    } catch {
+      if (!current()) return;
+      const unresolved = resetGrantOperations.inspect(key);
+      showNotification(
+        t(`claude_reset.${unresolved && !unresolved.code ? 'unknown' : 'blocked'}`),
+        'error'
+      );
+    } finally {
+      lock.current = false;
+      // A concurrent page-wide refresh can invalidate this read generation.
+      // Release the local lock regardless, but never refresh a replacement account.
+      setBusy(false);
+      setReload((value) => value + 1);
+      if (current()) onRefresh();
+    }
+  };
   const confirm = () => {
     if (blocked || lock.current || !selected || !authIndex) return;
     const version = generation.current;
-    const current = () =>
-      session === apiClient.getConnectionRevision() && version === generation.current;
     showConfirmation({
       title: t('claude_reset.title'),
-      message: t(pending ? 'claude_reset.retry_confirm' : 'claude_reset.confirm_text', {
-        name: displayName,
-      }),
+      message: confirmMessage,
       confirmText: t(pending ? 'claude_reset.retry' : 'claude_reset.confirm'),
       variant: 'primary',
-      onConfirm: async () => {
-        if (!current() || lock.current || useAuthStore.getState().connectionStatus !== 'connected')
-          return;
-        lock.current = true;
-        setBusy(true);
-        try {
-          const answer = await resetGrantOperations.run(key, authIndex, selected);
-          if (!current()) return;
-          showNotification(
-            t(`claude_reset.${answer.unresolved ? 'unknown' : answer.code}`),
-            !answer.unresolved && (answer.code === 'reset' || answer.code === 'already_used')
-              ? 'success'
-              : 'error'
-          );
-        } catch {
-          if (!current()) return;
-          const unresolved = resetGrantOperations.inspect(key);
-          showNotification(
-            t(`claude_reset.${unresolved && !unresolved.code ? 'unknown' : 'blocked'}`),
-            'error'
-          );
-        } finally {
-          lock.current = false;
-          // A concurrent page-wide refresh can invalidate this read generation.
-          // Release the local lock regardless, but never refresh a replacement account.
-          setBusy(false);
-          setReload((value) => value + 1);
-          if (current()) onRefresh();
-        }
-      },
+      onConfirm: () => execute(version),
     });
   };
   return {
@@ -117,6 +127,8 @@ export function useClaudeResetGrants(
     busy,
     blocked,
     confirm,
+    execute,
+    confirmMessage,
     message: pending ? (expired ? 'expired' : 'unknown') : message,
     buttonLabel: pending ? 'retry' : 'use',
   };

@@ -151,17 +151,17 @@
 - [x] run `bun test tests/resetInventory.test.ts tests/codexQuota.test.ts tests/quotaBodyRendering.test.ts` - must pass before task 4
 
 ### Task 4: Claude claim — modal-free execute() and proxy cooldown parity
-- [ ] write failing tests in `tests/claudeClaimCooldown.test.ts` for a new helper `clearClaudeCooldownAfterClaim` (`src/features/quota/providers/claude/claimCooldown.ts`), using `spyOn(authFilesApi, 'resetCooldown')`:
+- [x] write failing tests in `tests/claudeClaimCooldown.test.ts` for a new helper `clearClaudeCooldownAfterClaim` (`src/features/quota/providers/claude/claimCooldown.ts`), using `spyOn(authFilesApi, 'resetCooldown')`:
   - called once with the auth index only for answers `reset`/`already_used`; never for other codes or unresolved outcomes
   - skipped when the connection revision changed (guard like `guardConfigConnection` in `codex/data.ts`)
   - returns a failure result when `resetCooldown` throws, returns a non-`ok` status, or returns a mismatched `auth_index`
-- [ ] implement the helper
-- [ ] refactor `useClaudeResetGrants` (`src/features/quota/providers/claude/ClaudeResetGrants.tsx`):
+- [x] implement the helper
+- [x] refactor `useClaudeResetGrants` (`src/features/quota/providers/claude/ClaudeResetGrants.tsx`):
   - move the `onConfirm` body into an `execute()` function and return it, together with `confirmMessage` (the fresh `claude_reset.confirm_text` or the retry `claude_reset.retry_confirm` text, already interpolated)
   - keep `confirm()` calling `showConfirmation({` with the same `pending ? 'claude_reset.retry_confirm'` expression, now delegating to `execute()`
-  - after a successful answer, call the helper; on failure show the new key `quota_management.resets.cooldown_failed` ("Reset used, but the proxy cooldown was not cleared — clear it manually in Auth Files") in all five locales
-- [ ] extend the source-contract tests in `tests/claudeResetGrants.test.ts`: the hook returns `execute` and `confirmMessage`, the existing guards still hold, and the `QuotaCard` guards are unchanged
-- [ ] run `bun test tests/claudeClaimCooldown.test.ts tests/claudeResetGrants.test.ts` and `bun run verify` - must pass before task 5
+  - after a successful answer, call the helper; on failure show the new key `quota_management.resets.cooldown_failed` ("Reset used, but the proxy cooldown was not cleared — clear it manually in Auth Files") in all six locales (en, ru, zh-CN, zh-TW, vi, ko); the failure shows as a `warning` notification after the claim result
+- [x] extend the source-contract tests in `tests/claudeResetGrants.test.ts`: the hook returns `execute` and `confirmMessage`, the existing guards still hold, and the `QuotaCard` guards are unchanged
+- [x] run `bun test tests/claudeClaimCooldown.test.ts tests/claudeResetGrants.test.ts` and `bun run verify` - must pass before task 5
 
 ### Task 5: Codex — reusable reset execution without the modal
 - [ ] write failing tests in `tests/quotaResetExecution.test.ts` for a new plain helper `executeQuotaReset(deps)` (`src/features/quota/hooks/quotaReset.ts`), using injected `resetQuotaFn`, `setQuota`, `notify`, and the cache-generation functions:

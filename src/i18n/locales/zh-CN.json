@@ -1545,6 +1545,9 @@
     }
   },
   "quota_management": {
+    "resets": {
+      "cooldown_failed": "重置已使用，但代理冷却未清除——请在认证文件中手动清除"
+    },
     "ledger": {
       "view_ledger": "额度账本",
       "view_cards": "卡片",

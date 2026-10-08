@@ -1546,6 +1546,9 @@
     }
   },
   "quota_management": {
+    "resets": {
+      "cooldown_failed": "초기화를 사용했지만 프록시 쿨다운이 해제되지 않았습니다 — 인증 파일에서 직접 해제하세요"
+    },
     "search_label": "계정 검색",
     "search_placeholder": "파일명 또는 이메일로 검색",
     "search_empty_title": "일치하는 계정 없음",

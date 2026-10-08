@@ -352,3 +352,23 @@ test('Claude card uses Codex count and action styles and shared confirmation, no
   expect(hook).not.toContain('<Modal');
   expect(hook).not.toContain('status.grants.map');
 });
+
+test('hook exposes modal-free execute and confirmMessage, clearing cooldown after a claim', async () => {
+  const hook = await Bun.file('src/features/quota/providers/claude/ClaudeResetGrants.tsx').text();
+  const returned = hook.slice(hook.lastIndexOf('return {'));
+  expect(returned).toContain('execute,');
+  expect(returned).toContain('confirmMessage,');
+  expect(returned).toContain('confirm,');
+  // Cards keep the shared confirmation, which delegates to execute().
+  expect(hook).toMatch(/onConfirm: \(\) => execute\(/);
+  expect(hook).toContain('clearClaudeCooldownAfterClaim(');
+  expect(hook).toContain("t('quota_management.resets.cooldown_failed')");
+  const locales = await Promise.all(
+    ['en', 'zh-CN', 'zh-TW', 'ru', 'vi', 'ko'].map(
+      async (locale) => (await Bun.file(`src/i18n/locales/${locale}.json`).json()).quota_management
+    )
+  );
+  for (const locale of locales) {
+    expect(typeof locale.resets?.cooldown_failed).toBe('string');
+  }
+});

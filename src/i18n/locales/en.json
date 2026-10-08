@@ -1546,6 +1546,9 @@
     }
   },
   "quota_management": {
+    "resets": {
+      "cooldown_failed": "Reset used, but the proxy cooldown was not cleared — clear it manually in Auth Files"
+    },
     "ledger": {
       "view_ledger": "Ledger",
       "view_cards": "Cards",
