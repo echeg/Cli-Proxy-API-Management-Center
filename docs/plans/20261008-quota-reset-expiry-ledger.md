@@ -216,20 +216,21 @@
 - [x] ➕ the pure action builders (`codexResetAction`, `claudeResetAction`, `countResets`, `formatMonthDay`) live in `src/features/quota/resetActions.ts` so `QuotaLedgerResets.tsx` exports only components (react-refresh lint). Window lists join through the `quota_management.resets.windows_and` key, because the TS lib (ES2020) lacks `Intl.ListFormat`. The hook also exposes `selectedGrant`, so the Claude confirm names the grant it spends.
 
 ### Task 8: Quota reserve — data normalization and Ledger display
-- [ ] write failing tests in `tests/quotaReserve.test.ts`:
+- [x] write failing tests in `tests/quotaReserve.test.ts`:
   - credential normalization (`src/services/api/transformers.ts` / `AuthFileItem`) maps `quota_reserve` → `quotaReserve: { percent, mode }`, `quota_reserve_active` → `quotaReserveActive`, and `quota_reserve_until` → `quotaReserveUntil`
   - invalid or missing values become `undefined`
   - unknown `mode` → `undefined`
-- [ ] write failing SSR tests (extend `tests/quotaLedgerResets.test.ts` or add `tests/quotaLedgerReserve.test.ts`, with the `now` prop and a stub entry whose `file` carries the fields):
+- [x] write failing SSR tests (extend `tests/quotaLedgerResets.test.ts` or add `tests/quotaLedgerReserve.test.ts`, with the `now` prop and a stub entry whose `file` carries the fields):
   - no badge without a reserve
   - muted badge "Reserve 25% · soft" when configured but inactive
   - amber badge "Held until 10/14 · hard" when active, with the soft/hard tooltip text ("Proxy won't start new sessions on this account until …; existing sessions continue" / "…only when no other account is available")
   - a meter tick at `left: <percent>%` on each window when a reserve is set, absent otherwise
   - masking unaffected
   - the `role="group"` count unchanged
-- [ ] implement the normalization and add the fields to `AuthFileItem`
-- [ ] render the badge in `LedgerRow` `.identity` next to the resets chip, plus the tick in `WindowCell`/`Meter` (`QuotaLedger.tsx`), with styles in `QuotaLedger.module.scss` using theme tokens. Add the `quota_management.reserve.*` keys in all five locales.
-- [ ] run `bun test tests/quotaReserve.test.ts tests/quotaLedger*.test.ts` and `bun run verify` - must pass before task 9
+- [x] implement the normalization and add the fields to `AuthFileItem`
+- [x] render the badge in `LedgerRow` `.identity` next to the resets chip, plus the tick in `WindowCell`/`Meter` (`QuotaLedger.tsx`), with styles in `QuotaLedger.module.scss` using theme tokens. Add the `quota_management.reserve.*` keys in all five locales (done in all six, including `ko`).
+- [x] run `bun test tests/quotaReserve.test.ts tests/quotaLedger*.test.ts` and `bun run verify` - must pass before task 9
+- [x] ➕ the normalization lives in `normalizeAuthFileEntry` (`src/services/api/authFiles.ts`), where credential entries are actually normalized, not in `transformers.ts`. A missing `mode` defaults to `soft` (the backend default); a verdict without a valid reserve is dropped. The badge and tick carry `data-reserve-badge` / `data-reserve-tick` (+ `data-tone="warn"` when active), since CSS-module class names are `undefined` under SSR. An active reserve without `quota_reserve_until` reads "Held · hard". The tick sits in a `.meter` wrapper only when a reserve is set, so summary meters keep their DOM.
 
 ### Task 9: Quota reserve — Auth Files editor
 - [ ] write failing tests for the editor's patch building in `useAuthFilesPrefixProxyEditor.ts` (extract a pure `buildQuotaReservePatch(original, editor)` if needed, tested in `tests/authFilesQuotaReserve.test.ts`):

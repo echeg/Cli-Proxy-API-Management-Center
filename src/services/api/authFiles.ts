@@ -5,7 +5,7 @@
 import { apiClient } from './client';
 import { getConfigValue, guardConfigConnection } from './configValue';
 import { isRecord } from '@/utils/helpers';
-import type { AuthFilesResponse } from '@/types/authFile';
+import type { AuthFileQuotaReserve, AuthFilesResponse } from '@/types/authFile';
 import type { OAuthModelAliasEntry } from '@/types';
 import { normalizeOAuthProviderKey } from '@/utils/providerKeys';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
@@ -242,6 +242,31 @@ const readIntegerField = (value: unknown): number | undefined => {
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 };
 
+const readQuotaReserve = (value: unknown): AuthFileQuotaReserve | undefined => {
+  if (!isRecord(value)) return undefined;
+  const percent = readIntegerField(value.percent);
+  if (percent === undefined || percent < 1 || percent > 99) return undefined;
+  // The backend defaults a missing mode to soft.
+  const mode = value.mode ?? 'soft';
+  return mode === 'soft' || mode === 'hard' ? { percent, mode } : undefined;
+};
+
+/** The selector's verdict is only meaningful next to a configured reserve. */
+const readQuotaReserveFields = (entry: AuthFileEntry) => {
+  const quotaReserve = readQuotaReserve(entry['quota_reserve']);
+  if (!quotaReserve) {
+    return { quotaReserve: undefined, quotaReserveActive: undefined, quotaReserveUntil: undefined };
+  }
+  const active = entry['quota_reserve_active'];
+  const until = entry['quota_reserve_until'];
+  return {
+    quotaReserve,
+    quotaReserveActive: typeof active === 'boolean' ? active : undefined,
+    quotaReserveUntil:
+      typeof until === 'string' && Number.isFinite(Date.parse(until)) ? until : undefined,
+  };
+};
+
 const readRuntimeOnlyField = (entry: AuthFileEntry): boolean => {
   const raw = entry['runtime_only'] ?? entry.runtimeOnly;
   if (typeof raw === 'boolean') return raw;
@@ -283,6 +308,7 @@ const normalizeAuthFileEntry = (
     ...(modified > 0 ? { modified } : {}),
     priority,
     weight,
+    ...readQuotaReserveFields(entry),
     ...(note ? { note } : {}),
     ...(email ? { email } : {}),
     ...(projectId ? { projectId } : {}),

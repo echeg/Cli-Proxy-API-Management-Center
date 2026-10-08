@@ -1546,6 +1546,19 @@
     }
   },
   "quota_management": {
+    "reserve": {
+      "badge": "Reserve {{percent}}% · {{mode}}",
+      "badge_held": "Held until {{date}} · {{mode}}",
+      "badge_held_open": "Held · {{mode}}",
+      "mode_soft": "soft",
+      "mode_hard": "hard",
+      "idle_soft": "Keeps {{percent}}% of every window for services outside the proxy. Below it, the proxy starts new sessions on this account only when no other account is available; existing sessions continue",
+      "idle_hard": "Keeps {{percent}}% of every window for services outside the proxy. Below it, the proxy won't start new sessions on this account; existing sessions continue",
+      "held_soft": "Proxy starts new sessions on this account until {{date}} only when no other account is available; existing sessions continue",
+      "held_soft_open": "Proxy starts new sessions on this account only when no other account is available, until its quota window recovers; existing sessions continue",
+      "held_hard": "Proxy won't start new sessions on this account until {{date}}; existing sessions continue",
+      "held_hard_open": "Proxy won't start new sessions on this account until its quota window recovers; existing sessions continue"
+    },
     "resets": {
       "cooldown_failed": "Reset used, but the proxy cooldown was not cleared — clear it manually in Auth Files",
       "chip_one": "1 reset · expires {{date}}",

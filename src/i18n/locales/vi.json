@@ -1503,6 +1503,19 @@
     "precise_save_recovery_required": "Không thể đọc lại kết quả lưu. Đã tạm dừng chỉnh sửa. Lưu lại để khôi phục mốc cơ sở của bản nháp, hoặc tải lại cấu hình."
   },
   "quota_management": {
+    "reserve": {
+      "badge": "Dự trữ {{percent}}% · {{mode}}",
+      "badge_held": "Giữ đến {{date}} · {{mode}}",
+      "badge_held_open": "Đang giữ · {{mode}}",
+      "mode_soft": "mềm",
+      "mode_hard": "cứng",
+      "idle_soft": "Giữ {{percent}}% mỗi cửa sổ cho các dịch vụ ngoài proxy. Dưới mức này, proxy chỉ mở phiên mới trên tài khoản này khi không còn tài khoản nào khác; các phiên hiện có vẫn tiếp tục",
+      "idle_hard": "Giữ {{percent}}% mỗi cửa sổ cho các dịch vụ ngoài proxy. Dưới mức này, proxy không mở phiên mới trên tài khoản này; các phiên hiện có vẫn tiếp tục",
+      "held_soft": "Đến {{date}}, proxy chỉ mở phiên mới trên tài khoản này khi không còn tài khoản nào khác; các phiên hiện có vẫn tiếp tục",
+      "held_soft_open": "Cho đến khi cửa sổ hạn mức hồi phục, proxy chỉ mở phiên mới trên tài khoản này khi không còn tài khoản nào khác; các phiên hiện có vẫn tiếp tục",
+      "held_hard": "Proxy sẽ không mở phiên mới trên tài khoản này đến {{date}}; các phiên hiện có vẫn tiếp tục",
+      "held_hard_open": "Proxy sẽ không mở phiên mới trên tài khoản này cho đến khi cửa sổ hạn mức hồi phục; các phiên hiện có vẫn tiếp tục"
+    },
     "resets": {
       "cooldown_failed": "Đã dùng lượt đặt lại, nhưng thời gian chờ của proxy chưa được xóa — hãy xóa thủ công trong File xác thực",
       "chip_one": "1 lượt đặt lại · hết hạn {{date}}",

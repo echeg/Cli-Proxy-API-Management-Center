@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { IconRefreshCw } from '@/components/ui/icons';
 import { useNow } from '@/hooks/useNow';
-import type { ResolvedTheme } from '@/types';
-import { buildResetDisplay, resolveQuotaErrorMessage } from '@/utils/quota';
+import type { AuthFileItem, ResolvedTheme } from '@/types';
+import { buildResetDisplay, formatInstantShort, resolveQuotaErrorMessage } from '@/utils/quota';
 import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
 import { getAuthFileIcon, getTypeLabel } from '@/features/authFiles/constants';
 import { QUOTA_TAB_ORDER } from '../constants';
@@ -19,7 +19,7 @@ import {
 import type { LedgerWindow } from '../ledgerModel';
 import type { QuotaFileEntry } from '../logic';
 import type { QuotaCardState } from '../providers';
-import { codexResetAction, countResets } from '../resetActions';
+import { codexResetAction, countResets, formatMonthDay } from '../resetActions';
 import { buildResetInventory } from '../resetInventory';
 import {
   ClaudeLedgerResetsDrawer,
@@ -44,7 +44,7 @@ type Props = {
   now?: number;
 };
 
-function Meter({ remaining }: { remaining: number | null }) {
+function Meter({ remaining, reserve }: { remaining: number | null; reserve?: number }) {
   const tone =
     remaining === null
       ? ''
@@ -53,10 +53,64 @@ function Meter({ remaining }: { remaining: number | null }) {
         : remaining >= 30
           ? styles.medium
           : styles.low;
-  return (
+  const track = (
     <div className={styles.track} aria-hidden="true">
       <span className={tone} style={{ width: `${remaining ?? 0}%` }} />
     </div>
+  );
+  if (reserve === undefined) return track;
+  // The fill ends left of the tick exactly when the window is below the reserve.
+  return (
+    <div className={styles.meter}>
+      {track}
+      <i
+        className={styles.reserveTick}
+        data-reserve-tick=""
+        style={{ left: `${reserve}%` }}
+        aria-hidden="true"
+      />
+    </div>
+  );
+}
+
+/** Shows the backend's reserve verdict as-is; the Ledger never recomputes it. */
+function ReserveBadge({ file }: { file: AuthFileItem }) {
+  const { t } = useTranslation();
+  const reserve = file.quotaReserve;
+  if (!reserve) return null;
+  const hard = reserve.mode === 'hard';
+  const mode = t(
+    hard ? 'quota_management.reserve.mode_hard' : 'quota_management.reserve.mode_soft'
+  );
+  const untilMs = file.quotaReserveUntil ? Date.parse(file.quotaReserveUntil) : NaN;
+  const hasUntil = Number.isFinite(untilMs);
+  let text: string;
+  let title: string;
+  if (!file.quotaReserveActive) {
+    text = t('quota_management.reserve.badge', { percent: reserve.percent, mode });
+    title = t(hard ? 'quota_management.reserve.idle_hard' : 'quota_management.reserve.idle_soft', {
+      percent: reserve.percent,
+    });
+  } else if (hasUntil) {
+    text = t('quota_management.reserve.badge_held', { date: formatMonthDay(untilMs), mode });
+    title = t(hard ? 'quota_management.reserve.held_hard' : 'quota_management.reserve.held_soft', {
+      date: formatInstantShort(untilMs),
+    });
+  } else {
+    text = t('quota_management.reserve.badge_held_open', { mode });
+    title = t(
+      hard ? 'quota_management.reserve.held_hard_open' : 'quota_management.reserve.held_soft_open'
+    );
+  }
+  return (
+    <span
+      className={styles.reserve}
+      data-reserve-badge=""
+      data-tone={file.quotaReserveActive ? 'warn' : undefined}
+      title={title}
+    >
+      {text}
+    </span>
   );
 }
 
@@ -77,14 +131,22 @@ function Reset({ atMs, now }: { atMs: number | null; now: number }) {
   );
 }
 
-function WindowCell({ window, now }: { window: LedgerWindow; now: number }) {
+function WindowCell({
+  window,
+  reserve,
+  now,
+}: {
+  window: LedgerWindow;
+  reserve?: number;
+  now: number;
+}) {
   return (
     <div className={styles.window}>
       <div className={styles.windowHeading}>
         <span>{window.label}</span>
         <strong>{window.remaining === null ? '--' : `${Math.round(window.remaining)}%`}</strong>
       </div>
-      <Meter remaining={window.remaining} />
+      <Meter remaining={window.remaining} reserve={reserve} />
       <Reset atMs={window.resetAtMs} now={now} />
     </div>
   );
@@ -178,21 +240,29 @@ function LedgerRow({
           {label}
         </span>
         <span className={styles.plan}>{plan || getTypeLabel(t, entry.type)}</span>
-        <QuotaLedgerResetsChip
-          inventory={resets}
-          expanded={resetsOpen}
-          loading={loading}
-          controls={resetsId}
-          showEmails={showEmails}
-          now={now}
-          // The drawer that started a reset stays open until it settles.
-          onToggle={() => setResetsOpen(resetting || !resetsOpen)}
-        />
+        <div className={styles.tags}>
+          <QuotaLedgerResetsChip
+            inventory={resets}
+            expanded={resetsOpen}
+            loading={loading}
+            controls={resetsId}
+            showEmails={showEmails}
+            now={now}
+            // The drawer that started a reset stays open until it settles.
+            onToggle={() => setResetsOpen(resetting || !resetsOpen)}
+          />
+          <ReserveBadge file={entry.file} />
+        </div>
       </div>
       <div className={styles.windows}>
         {ordered.length ? (
           (expanded ? ordered : ordered.slice(0, 3)).map((window) => (
-            <WindowCell key={window.id} window={window} now={now} />
+            <WindowCell
+              key={window.id}
+              window={window}
+              reserve={entry.file.quotaReserve?.percent}
+              now={now}
+            />
           ))
         ) : (
           <div className={styles.state}>
