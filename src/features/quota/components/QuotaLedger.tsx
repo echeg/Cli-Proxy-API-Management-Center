@@ -3,13 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/Button';
 import { IconRefreshCw } from '@/components/ui/icons';
 import { useNow } from '@/hooks/useNow';
-import type { AuthFileItem, ResolvedTheme } from '@/types';
-import {
-  buildResetDisplay,
-  formatInstantShort,
-  normalizeAuthIndex,
-  resolveQuotaErrorMessage,
-} from '@/utils/quota';
+import type { ResolvedTheme } from '@/types';
+import { buildResetDisplay, normalizeAuthIndex, resolveQuotaErrorMessage } from '@/utils/quota';
 import { getQuotaCacheKey, getQuotaDisplayName } from '@/utils/quota/identity';
 import { getAuthFileIcon, getTypeLabel } from '@/features/authFiles/constants';
 import { QUOTA_TAB_ORDER } from '../constants';
@@ -29,7 +24,8 @@ import {
   claudeResetOperationKey,
   resetGrantOperations,
 } from '../providers/claude/resetGrantOperations';
-import { codexResetAction, countResets, formatMonthDay } from '../resetActions';
+import { codexResetAction, countResets } from '../resetActions';
+import { ReserveBadge, ReserveMeter } from './QuotaReserveVisuals';
 import { buildResetInventory } from '../resetInventory';
 import {
   ClaudeLedgerResetsDrawer,
@@ -53,76 +49,6 @@ type Props = {
   /** Pins the clock (SSR tests); defaults to the shared minute clock. */
   now?: number;
 };
-
-function Meter({ remaining, reserve }: { remaining: number | null; reserve?: number }) {
-  const tone =
-    remaining === null
-      ? ''
-      : remaining >= 70
-        ? styles.high
-        : remaining >= 30
-          ? styles.medium
-          : styles.low;
-  const track = (
-    <div className={styles.track} aria-hidden="true">
-      <span className={tone} style={{ width: `${remaining ?? 0}%` }} />
-    </div>
-  );
-  if (reserve === undefined) return track;
-  // On a window the verdict reads, the fill ends left of the tick when it is below the reserve.
-  return (
-    <div className={styles.meter}>
-      {track}
-      <i
-        className={styles.reserveTick}
-        data-reserve-tick=""
-        style={{ left: `${reserve}%` }}
-        aria-hidden="true"
-      />
-    </div>
-  );
-}
-
-/** Shows the backend's reserve verdict as-is; the Ledger never recomputes it. */
-function ReserveBadge({ file }: { file: AuthFileItem }) {
-  const { t } = useTranslation();
-  const reserve = file.quotaReserve;
-  if (!reserve) return null;
-  const hard = reserve.mode === 'hard';
-  const mode = t(
-    hard ? 'quota_management.reserve.mode_hard' : 'quota_management.reserve.mode_soft'
-  );
-  let text: string;
-  let title: string;
-  if (!file.quotaReserveActive) {
-    text = t('quota_management.reserve.badge', { percent: reserve.percent, mode });
-    title = t(hard ? 'quota_management.reserve.idle_hard' : 'quota_management.reserve.idle_soft', {
-      percent: reserve.percent,
-    });
-  } else if (file.quotaReserveUntil) {
-    // The API layer keeps only a parseable `quota_reserve_until`.
-    const untilMs = Date.parse(file.quotaReserveUntil);
-    text = t('quota_management.reserve.badge_held', { date: formatMonthDay(untilMs), mode });
-    title = t(hard ? 'quota_management.reserve.held_hard' : 'quota_management.reserve.held_soft', {
-      date: formatInstantShort(untilMs),
-    });
-  } else {
-    text = t('quota_management.reserve.badge_held_open', { mode });
-    title = t(
-      hard ? 'quota_management.reserve.held_hard_open' : 'quota_management.reserve.held_soft_open'
-    );
-  }
-  return (
-    <span
-      className={styles.reserve}
-      data-reserve-badge=""
-      data-tone={file.quotaReserveActive ? 'warn' : undefined}
-      title={title}
-    >
-      {text}
-    </span>
-  );
-}
 
 function Reset({ atMs, now }: { atMs: number | null; now: number }) {
   const { t, i18n } = useTranslation();
@@ -156,7 +82,7 @@ function WindowCell({
         <span>{window.label}</span>
         <strong>{window.remaining === null ? '--' : `${Math.round(window.remaining)}%`}</strong>
       </div>
-      <Meter remaining={window.remaining} reserve={reserve} />
+      <ReserveMeter remaining={window.remaining} reserve={reserve} />
       <Reset atMs={window.resetAtMs} now={now} />
     </div>
   );
@@ -184,7 +110,7 @@ function SummaryWindow({
       </div>
       <div className={styles.segments}>
         {aggregate.windows.map((window, index) => (
-          <Meter
+          <ReserveMeter
             key={getQuotaCacheKey(entries[index].file)}
             remaining={window?.remaining ?? null}
           />

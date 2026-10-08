@@ -184,12 +184,13 @@
 - [x] run `bun test tests/quotaTotalsModel.test.ts tests/quotaTotalsStrip.test.ts` and `bun run verify` - must pass before task 4
 
 ### Task 4: Shared reserve visuals
-- [ ] write failing SSR tests in `tests/quotaReserveVisuals.test.ts` (move or duplicate the relevant assertions from `tests/quotaLedgerReserve.test.ts`):
+- [x] write failing SSR tests in `tests/quotaReserveVisuals.test.ts` (move or duplicate the relevant assertions from `tests/quotaLedgerReserve.test.ts`):
   - `ReserveBadge` states (none / idle soft / held hard with until / held open)
   - `ReserveMeter` renders `data-reserve-tick` at `left: <percent>%` only when the reserve covers that window (`reserveCoversWindow`)
-- [ ] move `ReserveBadge` and the reserve-aware meter out of `QuotaLedger.tsx` into `components/QuotaReserveVisuals.tsx` (exported). Give `ReserveBadge` an optional `onClick` that renders it as a `<button>`. Make `QuotaLedger.tsx` import them with identical output.
-- [ ] confirm `tests/quotaLedgerReserve.test.ts` and `tests/quotaLedger.test.ts` still pass with identical markup
-- [ ] run `bun test tests/quotaReserveVisuals.test.ts tests/quotaLedgerReserve.test.ts tests/quotaLedger.test.ts` and `bun run verify` - must pass before task 5
+- [x] move `ReserveBadge` and the reserve-aware meter out of `QuotaLedger.tsx` into `components/QuotaReserveVisuals.tsx` (exported). Give `ReserveBadge` an optional `onClick` that renders it as a `<button>`. Make `QuotaLedger.tsx` import them with identical output.
+- [x] confirm `tests/quotaLedgerReserve.test.ts` and `tests/quotaLedger.test.ts` still pass with identical markup
+- [x] run `bun test tests/quotaReserveVisuals.test.ts tests/quotaLedgerReserve.test.ts tests/quotaLedger.test.ts` and `bun run verify` - must pass before task 5
+- [x] ➕ moved the meter/badge rules into `QuotaReserveVisuals.module.scss` and changed Ledger's `.segments .track` to `.segments > *`, since the shared meter's hashed class no longer matches the Ledger module's `.track`; added a button variant of `ReserveBadge` (`onClick`, `aria-expanded`) for the card editor
 
 ### Task 5: Compact card model and card display
 - [ ] write failing tests in `tests/compactCardModel.test.ts` for `buildCompactCardModel(entry, quota, t, nowMs)`:
