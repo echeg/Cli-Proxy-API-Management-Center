@@ -246,17 +246,18 @@
 - [x] ➕ the pure model lives in `src/features/authFiles/quotaReserve.ts` (`supportsQuotaReserve`, `readQuotaReserveDraft`, `quotaReserveError`, `buildQuotaReservePatch`); controls are `AuthFileQuotaReserveField.tsx`. Editor state is one optional `quotaReserve` draft (`{ enabled, percent, mode, touched }`, set only for codex/claude) instead of three flat fields, mirroring the optional `policy` draft. The draft reads the auth JSON's `quota_reserve` first (the backend stores it there, like `priority`) and falls back to `file.quotaReserve`; the API parser is exported as `parseAuthFileQuotaReserve`. Disabling a stored (even invalid) reserve sends `null`. Translations landed in all six locales, including `ko`.
 
 ### Task 10: Verify acceptance criteria
-- [ ] verify every Overview requirement:
+- [x] verify every Overview requirement:
   - fork contains `upstream/main`
   - Cards show Claude grant expiry
   - Ledger chip + drawer for Codex and Claude rows with resets
   - inline two-step use via the existing flows
   - Claude success clears the proxy cooldown
   - reserve badge, meter tick and Auth Files editor work against fixtures, and the UI is hidden when the backend omits the fields
-- [ ] verify the edge cases: expired/unparseable entries hidden, `endsAt: null` sorted last, grants read failure leaves windows intact, masking with emails hidden, the ≤700px layout keeps the chip and drawer usable (inspect the SCSS rules)
-- [ ] verify that no guard regressed: `claudeResetGrants` source guards, `CLAUDE_USAGE_URL` query-free, Ledger `role="group"` counts, 5-locale parity (`vietnameseLocale` + `claude_reset` parity tests)
-- [ ] run `bun run verify` (tests + lint + build) - must pass; fix lint errors and any new warnings in changed files
-- [ ] confirm every new module (`resetInventory.ts`, `claimCooldown.ts`, `quotaReset.ts`, `QuotaLedgerResets.tsx`, reserve normalization and patch builder) has tests that cover its success and error branches
+- [x] verify the edge cases: expired/unparseable entries hidden, `endsAt: null` sorted last, grants read failure leaves windows intact, masking with emails hidden, the ≤700px layout keeps the chip and drawer usable (inspect the SCSS rules)
+- [x] verify that no guard regressed: `claudeResetGrants` source guards, `CLAUDE_USAGE_URL` query-free, Ledger `role="group"` counts, 5-locale parity (`vietnameseLocale` + `claude_reset` parity tests)
+- [x] run `bun run verify` (tests + lint + build) - must pass; fix lint errors and any new warnings in changed files
+- [x] confirm every new module (`resetInventory.ts`, `claimCooldown.ts`, `quotaReset.ts`, `QuotaLedgerResets.tsx`, reserve normalization and patch builder) has tests that cover its success and error branches
+- [x] ➕ verification notes: `upstream/main` is an ancestor of HEAD; `bun run verify` passed (1675 tests, 0 fail, lint + build OK) and ESLint reports no warnings on the 73 changed files; `quota_management.resets.*`, `quota_management.reserve.*`, `auth_files.reserve.*` and `claude_reset.*` have matching keys and `{{tokens}}` in all six locales; at ≤700px the drawer takes grid row 3 full width below the windows and its actions left-align. The pre-existing ru/zh-TW gaps (also on `upstream/main`) are filed in `docs/backlog/locale-gaps-plugin-resource-ru.md`.
 
 ### Task 11: [Final] Update documentation
 - [ ] update `README.md` (and `README_CN.md` if it has the same row) in the Quotas feature row to mention subscription resets with expiry and inline use, and the per-credential quota reserve (Auth Files editor, Ledger badge)
