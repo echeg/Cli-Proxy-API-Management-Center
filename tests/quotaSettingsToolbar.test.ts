@@ -136,4 +136,13 @@ describe('quota settings toolbar', () => {
       i18n.t('quota_management.routing.saved')
     );
   });
+
+  test('marks each switch on or off for the colored state', () => {
+    const markup = render();
+    expect(markup).toContain('data-switch="affinity" data-state="on"');
+    expect(markup).toContain('data-switch="fast-mode" data-state="off"');
+    expect(
+      render({ fastMode: { enabled: true, saving: false, error: '', toggle: async () => {} } })
+    ).toContain('data-switch="fast-mode" data-state="on"');
+  });
 });

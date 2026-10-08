@@ -20,6 +20,42 @@
   white-space: nowrap;
 }
 
+// ToggleSwitch markup: label > input + span.track > span.thumb, then span.label.
+// Its classes are hashed, so style it structurally from this wrapper.
+.switch {
+  display: inline-flex;
+
+  label > input + span {
+    background: color-mix(in srgb, var(--danger-color) 55%, var(--bg-tertiary));
+  }
+
+  label > span:last-child {
+    color: color-mix(in srgb, var(--danger-color) 70%, var(--text-secondary));
+    font-weight: 500;
+  }
+
+  label > input:focus-visible + span {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 2px;
+  }
+
+  &[data-state='on'] {
+    // `:checked` outranks ToggleSwitch's own `.root input:checked + .track`.
+    label > input:checked + span {
+      background: var(--viz-success);
+    }
+
+    label > span:last-child {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+  }
+
+  label > input:disabled + span {
+    opacity: 0.5;
+  }
+}
+
 .caption {
   color: var(--text-tertiary);
 }

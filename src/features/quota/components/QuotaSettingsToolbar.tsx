@@ -88,12 +88,18 @@ export function QuotaSettingsToolbar({
       </div>
 
       <div className={styles.group} title={t('quota_management.routing.ttl_hint')}>
-        <ToggleSwitch
-          checked={values?.sessionAffinity ?? false}
-          disabled={blocked}
-          onChange={(sessionAffinity) => routing.change({ sessionAffinity })}
-          label={t('config_management.visual.sections.network.session_affinity')}
-        />
+        <span
+          className={styles.switch}
+          data-switch="affinity"
+          data-state={values?.sessionAffinity ? 'on' : 'off'}
+        >
+          <ToggleSwitch
+            checked={values?.sessionAffinity ?? false}
+            disabled={blocked}
+            onChange={(sessionAffinity) => routing.change({ sessionAffinity })}
+            label={t('config_management.visual.sections.network.session_affinity')}
+          />
+        </span>
         <input
           className={`input ${styles.ttl}`}
           aria-label={t('config_management.visual.sections.network.session_affinity_ttl')}
@@ -186,12 +192,18 @@ export function QuotaSettingsToolbar({
       <span className={styles.separator} aria-hidden="true" />
 
       <div className={styles.group} title={t('quota_management.codex_fast.description')}>
-        <ToggleSwitch
-          checked={fastMode.enabled ?? false}
-          disabled={disabled || fastMode.saving || fastMode.enabled === null}
-          onChange={(next) => void fastMode.toggle(next)}
-          label={t('quota_management.codex_fast.title')}
-        />
+        <span
+          className={styles.switch}
+          data-switch="fast-mode"
+          data-state={fastMode.enabled ? 'on' : 'off'}
+        >
+          <ToggleSwitch
+            checked={fastMode.enabled ?? false}
+            disabled={disabled || fastMode.saving || fastMode.enabled === null}
+            onChange={(next) => void fastMode.toggle(next)}
+            label={t('quota_management.codex_fast.title')}
+          />
+        </span>
       </div>
 
       <div className={styles.actions}>
