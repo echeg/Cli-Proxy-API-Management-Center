@@ -1514,6 +1514,10 @@
     "precise_save_recovery_required": "Không thể đọc lại kết quả lưu. Đã tạm dừng chỉnh sửa. Lưu lại để khôi phục mốc cơ sở của bản nháp, hoặc tải lại cấu hình."
   },
   "quota_management": {
+    "reserve_editor": {
+      "title": "Dự trữ hạn mức",
+      "remove": "Gỡ mức dự trữ"
+    },
     "compact": {
       "enabled": "Đã bật",
       "disabled": "Đã tắt",

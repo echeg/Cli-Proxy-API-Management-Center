@@ -1556,6 +1556,10 @@
     }
   },
   "quota_management": {
+    "reserve_editor": {
+      "title": "额度预留",
+      "remove": "移除预留"
+    },
     "compact": {
       "enabled": "已启用",
       "disabled": "已禁用",

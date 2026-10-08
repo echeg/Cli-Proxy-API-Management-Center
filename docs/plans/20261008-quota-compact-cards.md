@@ -227,7 +227,7 @@
 - [x] ➕ wiring lives in a new container `components/QuotaCompactCardItem.tsx` (model + reset action + busy state); `ResetActionFooter` gained `initialConfirming`/`onClose`, and the open-only Claude read is the exported `ClaudeResetActionMount` (render-prop) used by both the Ledger drawer and the card
 
 ### Task 7: Inline reserve editor in the card
-- [ ] write failing tests in `tests/quotaReserveSave.test.ts` for `saveQuotaReserve({ file, draft, revision }, deps)`. Spy on `authFilesApi.patchFields` and inject `reloadReserveVerdicts` and a revision check.
+- [x] write failing tests in `tests/quotaReserveSave.test.ts` for `saveQuotaReserve({ file, draft, revision }, deps)`. Spy on `authFilesApi.patchFields` and inject `reloadReserveVerdicts` and a revision check.
   - enabling sends `{quota_reserve:{percent,mode}}`
   - disabling a stored reserve sends `{quota_reserve:null}`, even when the stored value was invalid
   - an unchanged draft sends nothing
@@ -235,14 +235,15 @@
   - a connection-revision change after the await → no reload
   - a 400 → an error result with the message
   - success → `reloadReserveVerdicts` called once, the quota cache is not cleared
-- [ ] write failing SSR tests in `tests/quotaReserveInlineEditor.test.ts`:
+- [x] write failing SSR tests in `tests/quotaReserveInlineEditor.test.ts`:
   - the editor renders percent input, soft/hard select with the hint, Save/Cancel, and Remove when a reserve exists
   - validation message
   - the card shows a clickable reserve badge, or "Set reserve…" for codex/claude without a reserve, and nothing for other providers
   - the meter ticks preview the draft percent while editing
-- [ ] implement `src/features/quota/quotaReserveSave.ts` (reuse `readQuotaReserveDraft`, `quotaReserveError`, `buildQuotaReservePatch`) and `components/QuotaReserveInlineEditor.tsx` (compact, SSR-safe). Integrate it into `QuotaCompactCard` with a local `editing` state. Esc and Cancel close it, and focus returns to the chip.
-- [ ] add the `quota_management.reserve.editor.*` keys in all six locales. Leave the Auth Files editor (`AuthFileQuotaReserveField`) and its tests untouched.
-- [ ] run `bun test tests/quotaReserveSave.test.ts tests/quotaReserveInlineEditor.test.ts tests/authFilesQuotaReserve.test.ts` and `bun run verify` - must pass before task 8
+- [x] implement `src/features/quota/quotaReserveSave.ts` (reuse `readQuotaReserveDraft`, `quotaReserveError`, `buildQuotaReservePatch`) and `components/QuotaReserveInlineEditor.tsx` (compact, SSR-safe). Integrate it into `QuotaCompactCard` with a local `editing` state. Esc and Cancel close it, and focus returns to the chip.
+- [x] add the `quota_management.reserve.editor.*` keys in all six locales. Leave the Auth Files editor (`AuthFileQuotaReserveField`) and its tests untouched.
+- [x] run `bun test tests/quotaReserveSave.test.ts tests/quotaReserveInlineEditor.test.ts tests/authFilesQuotaReserve.test.ts` and `bun run verify` - must pass before task 8
+- [x] ➕ the editor keys live in `quota_management.reserve_editor.*` (not `reserve.editor.*`, since `quota_management.reserve` is an existing namespace); field labels and hints reuse `auth_files.reserve.*`; the card container takes `onReserveSaved` (= `reloadReserveVerdicts`)
 
 ### Task 8: Page integration — Cards becomes the compact grid and the default view
 - [ ] write failing tests:

@@ -1557,6 +1557,10 @@
     }
   },
   "quota_management": {
+    "reserve_editor": {
+      "title": "Quota reserve",
+      "remove": "Remove reserve"
+    },
     "compact": {
       "enabled": "Enabled",
       "disabled": "Disabled",

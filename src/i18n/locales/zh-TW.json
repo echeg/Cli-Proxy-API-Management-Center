@@ -1582,6 +1582,10 @@
     }
   },
   "quota_management": {
+    "reserve_editor": {
+      "title": "額度預留",
+      "remove": "移除預留"
+    },
     "compact": {
       "enabled": "已啟用",
       "disabled": "已停用",
