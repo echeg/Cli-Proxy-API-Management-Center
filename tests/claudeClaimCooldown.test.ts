@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, spyOn, test } from 'bun:test';
-import { clearClaudeCooldownAfterClaim } from '@/features/quota/providers/claude/claimCooldown';
+import type { TFunction } from 'i18next';
+import {
+  clearClaudeCooldownAfterClaim,
+  runClaudeClaim,
+  type ClaudeClaimDeps,
+} from '@/features/quota/providers/claude/claimCooldown';
 import { apiClient, authFilesApi } from '@/services/api';
 import {
   ANTHROPIC_RESET_RESULTS,
@@ -97,5 +102,78 @@ describe('Claude claim proxy cooldown', () => {
     expect(
       await clearClaudeCooldownAfterClaim('test-index', answer('already_used'), revision())
     ).toBe('failed');
+  });
+});
+
+describe('Claude claim execution', () => {
+  const t = ((key: string) => key) as TFunction;
+
+  function claimDeps(overrides: Partial<ClaudeClaimDeps> = {}) {
+    const notifications: Array<[string, string]> = [];
+    const deps: ClaudeClaimDeps = {
+      claim: async () => answer('reset'),
+      authIndex: 'test-index',
+      revision: revision(),
+      isCurrent: () => true,
+      hasUnresolvedClaim: () => false,
+      notify: (message, type) => notifications.push([message, type]),
+      t,
+      ...overrides,
+    };
+    return { deps, notifications };
+  }
+
+  test('a spent claim clears the cooldown and reports success', async () => {
+    const clear = setup();
+    const { deps, notifications } = claimDeps();
+    await runClaudeClaim(deps);
+    expect(clear).toHaveBeenCalledWith('test-index');
+    expect(notifications).toEqual([['claude_reset.reset', 'success']]);
+  });
+
+  test('a failed cooldown clear adds a warning after the success', async () => {
+    setup().mockRejectedValue(new Error('offline'));
+    const { deps, notifications } = claimDeps({ claim: async () => answer('already_used') });
+    await runClaudeClaim(deps);
+    expect(notifications).toEqual([
+      ['claude_reset.already_used', 'success'],
+      ['quota_management.resets.cooldown_failed', 'warning'],
+    ]);
+  });
+
+  test('refusals and unknown outcomes report an error without clearing', async () => {
+    const clear = setup();
+    const refused = claimDeps({ claim: async () => answer('rate_limited') });
+    await runClaudeClaim(refused.deps);
+    expect(refused.notifications).toEqual([['claude_reset.rate_limited', 'error']]);
+    const unknown = claimDeps({ claim: async () => answer('reset', true) });
+    await runClaudeClaim(unknown.deps);
+    expect(unknown.notifications).toEqual([['claude_reset.unknown', 'error']]);
+    expect(clear).not.toHaveBeenCalled();
+  });
+
+  test('a stale read still clears the cooldown but stays silent', async () => {
+    const clear = setup();
+    const { deps, notifications } = claimDeps({ isCurrent: () => false });
+    await runClaudeClaim(deps);
+    expect(clear).toHaveBeenCalledTimes(1);
+    expect(notifications).toEqual([]);
+  });
+
+  test('a thrown claim reports unknown while the journal holds it, blocked otherwise', async () => {
+    const clear = setup();
+    const fail = async () => {
+      throw new Error('offline');
+    };
+    const pending = claimDeps({ claim: fail, hasUnresolvedClaim: () => true });
+    await runClaudeClaim(pending.deps);
+    expect(pending.notifications).toEqual([['claude_reset.unknown', 'error']]);
+    const blocked = claimDeps({ claim: fail });
+    await runClaudeClaim(blocked.deps);
+    expect(blocked.notifications).toEqual([['claude_reset.blocked', 'error']]);
+    const stale = claimDeps({ claim: fail, isCurrent: () => false });
+    await runClaudeClaim(stale.deps);
+    expect(stale.notifications).toEqual([]);
+    expect(clear).not.toHaveBeenCalled();
   });
 });

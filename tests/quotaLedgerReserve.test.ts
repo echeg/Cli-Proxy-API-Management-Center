@@ -6,6 +6,7 @@ import type { AuthFileItem, CodexQuotaState } from '@/types';
 import { QuotaLedger } from '@/features/quota/components/QuotaLedger';
 import type { QuotaFileEntry } from '@/features/quota/logic';
 import type { QuotaCardState } from '@/features/quota/providers';
+import { formatMonthDay } from '@/features/quota/resetActions';
 import { formatInstantShort } from '@/utils/quota';
 
 beforeAll(async () => {
@@ -90,7 +91,7 @@ describe('Ledger quota reserve', () => {
         quotaReserveUntil: UNTIL,
       })
     );
-    expect(badge).toContain('Held until 10/14 · hard');
+    expect(badge).toContain(`Held until ${formatMonthDay(Date.parse(UNTIL))} · hard`);
     expect(badge).toContain('data-tone="warn"');
     expect(decode(badge!)).toContain(
       `Proxy won't start new sessions on this account until ${formatInstantShort(Date.parse(UNTIL))}; existing sessions continue`
@@ -107,7 +108,7 @@ describe('Ledger quota reserve', () => {
         })
       )!
     );
-    expect(badge).toContain('Held until 10/14 · soft');
+    expect(badge).toContain(`Held until ${formatMonthDay(Date.parse(UNTIL))} · soft`);
     expect(badge).toContain('only when no other account is available');
     expect(badge).toContain('existing sessions continue');
   });

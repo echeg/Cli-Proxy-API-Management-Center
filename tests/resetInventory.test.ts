@@ -119,7 +119,7 @@ describe('buildResetInventory — Claude', () => {
           grant({ id: 'open-ended', endsAt: null, label: 'Open ended' }),
           grant({
             id: 'launch',
-            label: '  Claude Opus 5.5 launch  ',
+            label: 'Claude Opus 5.5 launch',
             resetsTotal: 2,
             resetsLeft: 1,
             endsAt: '2026-10-22T16:00:00Z',
@@ -193,7 +193,7 @@ describe('buildResetInventory — Claude', () => {
   test('omits an empty label', () => {
     const inventory = buildResetInventory(
       'claude',
-      claudeQuota({ resetGrants: [grant({ label: '   ' })] }),
+      claudeQuota({ resetGrants: [grant({ label: '' })] }),
       NOW
     );
     expect(inventory?.items[0]).not.toHaveProperty('label');

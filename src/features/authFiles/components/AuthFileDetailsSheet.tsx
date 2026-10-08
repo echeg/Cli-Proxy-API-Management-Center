@@ -217,7 +217,6 @@ export function AuthFileDetailsSheet(props: AuthFileDetailsSheetProps) {
                     onChange={(e) => onChange('priority', e.target.value)}
                   />
                   <AuthFileQuotaReserveField
-                    providerKey={editor.providerKey}
                     draft={editor.quotaReserve}
                     disabled={disableControls || editor.saving || !editor.json}
                     onChange={(value) => onChange('quotaReserve', value)}

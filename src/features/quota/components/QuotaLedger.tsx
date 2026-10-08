@@ -38,8 +38,8 @@ type Props = {
   onRefresh: (entry: QuotaFileEntry) => void;
   /** Spends a Codex reset without a modal; the drawer collects the confirmation. */
   onReset?: (entry: QuotaFileEntry) => Promise<unknown> | void;
-  /** Cache key of the credential whose Codex reset is in flight. */
-  resettingKey?: string | null;
+  /** Cache keys of the credentials whose Codex reset is in flight. */
+  resettingKeys?: ReadonlySet<string>;
   /** Pins the clock (SSR tests); defaults to the shared minute clock. */
   now?: number;
 };
@@ -82,8 +82,6 @@ function ReserveBadge({ file }: { file: AuthFileItem }) {
   const mode = t(
     hard ? 'quota_management.reserve.mode_hard' : 'quota_management.reserve.mode_soft'
   );
-  const untilMs = file.quotaReserveUntil ? Date.parse(file.quotaReserveUntil) : NaN;
-  const hasUntil = Number.isFinite(untilMs);
   let text: string;
   let title: string;
   if (!file.quotaReserveActive) {
@@ -91,7 +89,9 @@ function ReserveBadge({ file }: { file: AuthFileItem }) {
     title = t(hard ? 'quota_management.reserve.idle_hard' : 'quota_management.reserve.idle_soft', {
       percent: reserve.percent,
     });
-  } else if (hasUntil) {
+  } else if (file.quotaReserveUntil) {
+    // The API layer keeps only a parseable `quota_reserve_until`.
+    const untilMs = Date.parse(file.quotaReserveUntil);
     text = t('quota_management.reserve.badge_held', { date: formatMonthDay(untilMs), mode });
     title = t(hard ? 'quota_management.reserve.held_hard' : 'quota_management.reserve.held_soft', {
       date: formatInstantShort(untilMs),
@@ -345,7 +345,7 @@ export function QuotaLedger({
   canRefresh,
   onRefresh,
   onReset,
-  resettingKey = null,
+  resettingKeys,
   now: nowProp,
 }: Props) {
   const { t } = useTranslation();
@@ -422,9 +422,7 @@ export function QuotaLedger({
                 canRefresh={canRefresh}
                 onRefresh={() => onRefresh(entry)}
                 onReset={onReset ? () => onReset(entry) : undefined}
-                codexResetting={
-                  resettingKey !== null && resettingKey === getQuotaCacheKey(entry.file)
-                }
+                codexResetting={resettingKeys?.has(getQuotaCacheKey(entry.file)) ?? false}
               />
             ))}
           </section>

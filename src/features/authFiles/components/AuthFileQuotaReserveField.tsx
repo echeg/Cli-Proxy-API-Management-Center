@@ -4,23 +4,21 @@ import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { ToggleSwitch } from '@/components/ui/ToggleSwitch';
 import type { AuthFileQuotaReserveMode } from '@/types/authFile';
-import { quotaReserveError, supportsQuotaReserve, type QuotaReserveDraft } from '../quotaReserve';
+import { quotaReserveError, type QuotaReserveDraft } from '../quotaReserve';
 
-/** Per-credential quota reserve editor; renders nothing for providers other than codex/claude. */
+/** Per-credential quota reserve editor; renders nothing without a draft (codex/claude only). */
 export function AuthFileQuotaReserveField({
-  providerKey,
   draft,
   disabled,
   onChange,
 }: {
-  providerKey: string;
   draft?: QuotaReserveDraft;
   disabled: boolean;
   onChange: (value: Partial<QuotaReserveDraft>) => void;
 }) {
   const { t } = useTranslation();
   const modeLabelId = useId();
-  if (!draft || !supportsQuotaReserve(providerKey)) return null;
+  if (!draft) return null;
   const error = quotaReserveError(draft);
 
   return (

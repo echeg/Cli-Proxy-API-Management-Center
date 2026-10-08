@@ -11,7 +11,6 @@ import {
   buildQuotaReservePatch,
   quotaReserveError,
   readQuotaReserveDraft,
-  supportsQuotaReserve,
   type QuotaReserveDraft,
   type QuotaReserveError,
 } from '@/features/authFiles/quotaReserve';
@@ -400,19 +399,17 @@ export const buildAuthFileFieldsPatch = (
     }
   }
 
-  if (supportsQuotaReserve(editor.providerKey)) {
-    const reserveError = quotaReserveError(editor.quotaReserve);
-    if (reserveError) {
-      throw new Error(resolveError(reserveError));
-    }
-    Object.assign(patch, buildQuotaReservePatch(original, editor.quotaReserve, editor.providerKey));
+  const reserveError = quotaReserveError(editor.quotaReserve);
+  if (reserveError) {
+    throw new Error(resolveError(reserveError));
   }
+  Object.assign(patch, buildQuotaReservePatch(original, editor.quotaReserve));
 
   Object.assign(patch, buildCredentialPolicyPatch(original, editor.policy));
   return patch;
 };
 
-const buildPrefixProxyUpdatedText = (
+export const buildPrefixProxyUpdatedText = (
   editor: PrefixProxyEditorState | null,
   resolveError: (key: AuthFileEditorErrorKey) => string
 ): string => {
@@ -640,9 +637,7 @@ export function useAuthFilesPrefixProxyEditor(
           invalidContentPreview: '',
           json,
           policy: readCredentialPolicy(json),
-          quotaReserve: supportsQuotaReserve(providerKey)
-            ? readQuotaReserveDraft(json, file.quotaReserve)
-            : undefined,
+          quotaReserve: readQuotaReserveDraft(providerKey, json, file.quotaReserve),
           providerKey,
           prefix,
           proxyUrl,

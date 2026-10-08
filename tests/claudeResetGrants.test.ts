@@ -361,8 +361,7 @@ test('hook exposes modal-free execute and confirmMessage, clearing cooldown afte
   expect(returned).toContain('confirm,');
   // Cards keep the shared confirmation, which delegates to execute().
   expect(hook).toMatch(/onConfirm: \(\) => execute\(/);
-  expect(hook).toContain('clearClaudeCooldownAfterClaim(');
-  expect(hook).toContain("t('quota_management.resets.cooldown_failed')");
+  expect(hook).toContain('await runClaudeClaim({');
   const locales = await Promise.all(
     ['en', 'zh-CN', 'zh-TW', 'ru', 'vi', 'ko'].map(
       async (locale) => (await Bun.file(`src/i18n/locales/${locale}.json`).json()).quota_management

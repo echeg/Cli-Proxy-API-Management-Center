@@ -186,7 +186,7 @@ function ResetActionFooter({
   action,
 }: {
   provider: QuotaProviderType;
-  action?: ResetAction | null;
+  action: ResetAction;
 }) {
   const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
@@ -202,7 +202,7 @@ function ResetActionFooter({
     setConfirming(false);
   };
   const confirm = () => {
-    if (!action || action.blocked || action.busy) return;
+    if (action.blocked || action.busy) return;
     void Promise.resolve(action.onConfirm()).finally(close);
   };
 
@@ -211,8 +211,8 @@ function ResetActionFooter({
       {provider === 'codex' && (
         <span className={styles.note}>{t('quota_management.resets.codex_choice_note')}</span>
       )}
-      {action?.reason && <span className={styles.reason}>{action.reason}</span>}
-      {action && (confirming || action.busy) ? (
+      {action.reason && <span className={styles.reason}>{action.reason}</span>}
+      {confirming || action.busy ? (
         <QuotaLedgerResetsConfirm
           consequence={action.consequence}
           note={action.note}
@@ -223,17 +223,15 @@ function ResetActionFooter({
           onCancel={close}
         />
       ) : (
-        action !== null && (
-          <Button
-            variant="secondary"
-            size="sm"
-            data-resets-use=""
-            disabled={!action || action.blocked}
-            onClick={() => setConfirming(true)}
-          >
-            {action?.label ?? t('quota_management.resets.use')}
-          </Button>
-        )
+        <Button
+          variant="secondary"
+          size="sm"
+          data-resets-use=""
+          disabled={action.blocked}
+          onClick={() => setConfirming(true)}
+        >
+          {action.label}
+        </Button>
       )}
     </div>
   );
@@ -246,8 +244,8 @@ type DrawerProps = {
   loading: boolean;
   showEmails: boolean;
   now: number;
-  /** The use-a-reset flow; without one the button stays disabled, `null` hides it. */
-  action?: ResetAction | null;
+  /** The use-a-reset flow; without one the drawer only lists the resets. */
+  action?: ResetAction;
 };
 
 function ResetLine({
@@ -314,6 +312,7 @@ export function QuotaLedgerResetsDrawer({
   const title = t('quota_management.resets.title');
 
   let body;
+  let listed = false;
   if (loading) {
     body = <p className={styles.status}>{t('quota_management.resets.loading')}</p>;
   } else if (!inventory || inventory.error !== undefined) {
@@ -321,6 +320,7 @@ export function QuotaLedgerResetsDrawer({
   } else if (!items.length) {
     body = <p className={styles.status}>{t('quota_management.resets.empty')}</p>;
   } else {
+    listed = true;
     body = (
       <>
         <p className={styles.hint}>{t('quota_management.resets.hint')}</p>
@@ -329,10 +329,11 @@ export function QuotaLedgerResetsDrawer({
             <ResetLine key={item.id} item={item} index={index} showEmails={showEmails} now={now} />
           ))}
         </ul>
-        <ResetActionFooter provider={provider} action={action} />
       </>
     );
   }
+  // An unknown-outcome Claude claim stays retryable after the stored list stops showing it.
+  const footer = action && (listed || (!loading && action.retry));
 
   return (
     <section id={id} className={styles.drawer} aria-label={title}>
@@ -341,6 +342,7 @@ export function QuotaLedgerResetsDrawer({
         {items.length > 0 && <span className={styles.count}>{countResets(items)}</span>}
       </div>
       {body}
+      {footer && <ResetActionFooter provider={provider} action={action} />}
     </section>
   );
 }

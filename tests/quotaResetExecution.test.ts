@@ -1,7 +1,11 @@
 import { describe, expect, test } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import type { TFunction } from 'i18next';
-import { executeQuotaReset, type QuotaResetDeps } from '@/features/quota/hooks/quotaReset';
+import {
+  executeQuotaReset,
+  resetFnIfAllowed,
+  type QuotaResetDeps,
+} from '@/features/quota/hooks/quotaReset';
 import type { QuotaCardState } from '@/features/quota/providers';
 import type { AuthFileItem, NotificationType } from '@/types';
 
@@ -11,8 +15,8 @@ const file = { name: 'codex-a.json', type: 'codex', auth_index: 'a' } as AuthFil
 
 function setup(overrides: Partial<QuotaResetDeps<number>> = {}) {
   let quotas: Record<string, QuotaCardState> = {};
-  let resetting: string | null = null;
-  const resettingDuringCall: Array<string | null> = [];
+  const resetting = new Set<string>();
+  const resettingDuringCall: string[][] = [];
   const notifications: Array<{ message: string; type: NotificationType }> = [];
   let generation = 1;
   const deps: QuotaResetDeps<number> = {
@@ -21,14 +25,15 @@ function setup(overrides: Partial<QuotaResetDeps<number>> = {}) {
       buildSuccessState: (data) => ({ status: 'success', data }) as unknown as QuotaCardState,
     },
     resetQuotaFn: async () => {
-      resettingDuringCall.push(resetting);
+      resettingDuringCall.push([...resetting]);
       return { windows: 1 };
     },
     setQuota: (updater) => {
       quotas = updater(quotas);
     },
-    setResetting: (updater) => {
-      resetting = updater(resetting);
+    setResetting: (cacheKey, on) => {
+      if (on) resetting.add(cacheKey);
+      else resetting.delete(cacheKey);
     },
     notify: (message, type) => notifications.push({ message, type }),
     t,
@@ -46,7 +51,7 @@ function setup(overrides: Partial<QuotaResetDeps<number>> = {}) {
     notifications,
     resettingDuringCall,
     quotas: () => quotas,
-    resetting: () => resetting,
+    resetting: () => [...resetting],
     bumpGeneration: () => {
       generation += 1;
     },
@@ -118,8 +123,8 @@ describe('executeQuotaReset', () => {
   test('sets the resetting key during the call and clears it in finally', async () => {
     const ok = setup();
     await executeQuotaReset(ok.deps);
-    expect(ok.resettingDuringCall).toEqual(['codex-a.json']);
-    expect(ok.resetting()).toBeNull();
+    expect(ok.resettingDuringCall).toEqual([['codex-a.json']]);
+    expect(ok.resetting()).toEqual([]);
 
     const failed = setup();
     failed.deps.resetQuotaFn = async () => {
@@ -127,18 +132,55 @@ describe('executeQuotaReset', () => {
       throw new Error('offline');
     };
     await executeQuotaReset(failed.deps);
-    expect(failed.resettingDuringCall).toEqual(['codex-a.json']);
-    expect(failed.resetting()).toBeNull();
+    expect(failed.resettingDuringCall).toEqual([['codex-a.json']]);
+    expect(failed.resetting()).toEqual([]);
   });
 
-  test('does not clear a resetting key that another credential took over', async () => {
+  test('keeps the key of another credential whose reset is still in flight', async () => {
     const ctx = setup();
     ctx.deps.resetQuotaFn = async () => {
-      ctx.deps.setResetting(() => 'codex-b.json');
+      ctx.deps.setResetting('codex-b.json', true);
       return {};
     };
     await executeQuotaReset(ctx.deps);
-    expect(ctx.resetting()).toBe('codex-b.json');
+    expect(ctx.resetting()).toEqual(['codex-b.json']);
+  });
+});
+
+describe('resetFnIfAllowed', () => {
+  const resetQuota = async () => ({});
+  const allowed = { disableControls: false, resettingKeys: new Set<string>() };
+
+  test('returns the adapter reset call when nothing blocks it', () => {
+    expect(resetFnIfAllowed(file, { resetQuota }, allowed)).toBe(resetQuota);
+    expect(
+      resetFnIfAllowed(
+        file,
+        { resetQuota },
+        { ...allowed, resettingKeys: new Set(['codex-b.json']) }
+      )
+    ).toBe(resetQuota);
+  });
+
+  test('blocks providers without resets, disabled controls and disabled files', () => {
+    expect(resetFnIfAllowed(file, {}, allowed)).toBeNull();
+    expect(
+      resetFnIfAllowed(file, { resetQuota }, { ...allowed, disableControls: true })
+    ).toBeNull();
+    expect(resetFnIfAllowed({ ...file, disabled: true }, { resetQuota }, allowed)).toBeNull();
+  });
+
+  test('blocks while the quota loads or this credential already has a reset in flight', () => {
+    expect(
+      resetFnIfAllowed(file, { resetQuota }, { ...allowed, quotaStatus: 'loading' })
+    ).toBeNull();
+    expect(
+      resetFnIfAllowed(
+        file,
+        { resetQuota },
+        { ...allowed, resettingKeys: new Set(['codex-a.json']) }
+      )
+    ).toBeNull();
   });
 });
 
@@ -154,6 +196,7 @@ describe('quota reset wiring contracts', () => {
 
   test('the hook exposes a modal-free performReset through the shared helper', () => {
     expect(actions).toContain('executeQuotaReset({');
+    expect(actions).toContain('resetFnIfAllowed(file, adapter, {');
     expect(actions).toMatch(/return \{[^}]*performReset[^}]*\}/);
   });
 });

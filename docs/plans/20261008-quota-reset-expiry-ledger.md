@@ -9,7 +9,7 @@
   - a threshold tick on the window meters
   - a reserve editor in the Auth Files details sheet
 
-  The UI tolerates older backends: without the fields, no reserve UI is shown.
+  The UI tolerates older backends: without the fields, the Ledger shows no reserve badge or tick. The Auth Files editor still shows for every Codex/Claude credential, since the backend advertises no capability for it.
 - Live example (2026-10-08): each Codex account holds 2 "Full reset" credits expiring around 10/22–23 and 10/29. Each Claude account holds 1 grant, "Claude Opus 5.5 launch: one usage-limit reset for Pro and Max" (1 of 1 left), which ends on 2026-10-22T16:00Z and clears `five_hour`/`seven_day`.
 
 ## Decisions

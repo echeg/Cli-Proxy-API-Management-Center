@@ -29,7 +29,7 @@ From everyday configuration to troubleshooting, keep the essentials close at han
 | --- | --- | --- |
 | Edit settings visually or in YAML, with a diff before saving. | Manage provider keys, auth files, and OAuth flows. | Check instance status, provider quotas, and request logs. |
 
-**Single-file deployment** · **Responsive layout** · **Four UI languages**
+**Single-file deployment** · **Responsive layout** · **Six UI languages**
 
 > [!IMPORTANT]
 > Requires **CLI Proxy API ≥ 8.0.0**; the latest v8 release is recommended. This repository is the management UI, not the proxy — it does not forward traffic. It uses the **v8 Management API** (`/v8/management`) and v8 configuration layout, with no v0 fallback. Plugin resources and custom extensions retain their backend-declared paths.
@@ -73,13 +73,13 @@ Upgrade the backend first and back up `config.yaml`. The backend returns the v8 
 | **Dashboard** | See connection status, server version, build date, and model availability at a glance. |
 | **Configuration** | Edit common settings and client keys visually, or use the YAML editor with search, highlighting, and a save diff preview. |
 | **AI providers** | Configure Gemini, Codex, Claude, Vertex, and OpenAI-compatible providers; manage keys, headers, proxies, and model mappings. |
-| **Auth files & OAuth** | Upload, download, and organize credentials; connect supported providers with OAuth or device flows; manage model aliases and exclusions. |
-| **Quotas** | Inspect quota and usage information for supported providers, including Claude, Antigravity, Codex, Kimi, and xAI/Grok. The Ledger lists each Codex and Claude subscription's rate-limit resets with their expiry and lets you use one inline, and shows the per-credential quota reserve (set in the Auth Files details sheet) for subscriptions shared outside the proxy. |
+| **Auth files & OAuth** | Upload, download, and organize credentials; connect supported providers with OAuth or device flows; manage model aliases and exclusions; set a Codex or Claude credential's quota reserve (1–99%; soft keeps the account as a last resort, hard stops new sessions below the reserve). |
+| **Quotas** | Inspect quota and usage information for supported providers, including Claude, Antigravity, Codex, Kimi, and xAI/Grok. The Ledger lists each Codex and Claude subscription's rate-limit resets with their expiry and lets you use one inline; using a reset also clears the proxy cooldown for that account. It also shows the per-credential quota reserve (set in the Auth Files details sheet) for subscriptions shared outside the proxy. The reserve needs a CLI Proxy API build with quota-reserve support; on older backends the Ledger shows no reserve badge, and saving a reserve from Auth Files may fail or have no effect. |
 | **Logs** | Follow logs with auto-refresh, search, hide management traffic, and download request error logs. |
 | **Plugins** | Access plugin management when the connected backend advertises support. |
 | **System** | Check for updates, inspect available models, and clear local login data. |
 
-Supports **English, 简体中文, 繁體中文, and Русский**, with browser-language detection and a manual language switch. Responsive layouts support desktop, tablet, and mobile use in modern Chrome, Firefox, Safari, and Edge.
+Supports **English, 简体中文, 繁體中文, Русский, Tiếng Việt, and 한국어**, with browser-language detection and a manual language switch. Responsive layouts support desktop, tablet, and mobile use in modern Chrome, Firefox, Safari, and Edge.
 
 ## Sponsor
 

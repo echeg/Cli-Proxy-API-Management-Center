@@ -7,13 +7,14 @@
  * many can I still use, and which one do I lose first. This reads both into one
  * list sorted by expiry, soonest first.
  *
- * Pure and React-free: `nowMs` is passed in, the quota state is read
- * structurally, and nothing here imports the store. `CodexQuotaBody`, the
+ * Pure and React-free: `nowMs` is passed in and nothing here imports the
+ * store; labels arrive already trimmed by the API readers. `CodexQuotaBody`, the
  * Timeline and `resetSchedule.ts` keep their own readers on purpose; this one
  * only serves the Ledger.
  */
 
-import type { AnthropicResetWindow } from '@/services/api/claudeResetGrants';
+import type { AnthropicResetGrant, AnthropicResetWindow } from '@/services/api/claudeResetGrants';
+import type { ClaudeQuotaState, CodexQuotaState, CodexRateLimitResetCredit } from '@/types';
 import { parseIsoToMs } from '@/utils/quota';
 import type { QuotaProviderType } from './providers/types';
 import { resetCreditRowId } from './resetSchedule';
@@ -39,30 +40,6 @@ export interface ResetInventory {
   error?: string;
 }
 
-/* Structural shapes, matching `CodexQuotaState` / `ClaudeQuotaState`. */
-
-interface CreditLike {
-  id?: string;
-  status?: string;
-  expiresAt?: string;
-  title?: string;
-}
-
-interface GrantLike {
-  id?: string;
-  label?: string;
-  resetsTotal?: number;
-  resetsLeft?: number;
-  endsAt?: string | null;
-  clears?: AnthropicResetWindow[];
-}
-
-const trimmedLabel = (value: unknown): string | undefined => {
-  if (typeof value !== 'string') return undefined;
-  const trimmed = value.trim();
-  return trimmed || undefined;
-};
-
 /** Soonest first; open-ended last; ties on id so the order is deterministic. */
 const compareItems = (a: ResetInventoryItem, b: ResetInventoryItem): number => {
   if (a.expiresAtMs !== b.expiresAtMs) {
@@ -73,42 +50,43 @@ const compareItems = (a: ResetInventoryItem, b: ResetInventoryItem): number => {
   return a.id < b.id ? -1 : a.id > b.id ? 1 : 0;
 };
 
-const codexItems = (credits: readonly CreditLike[], nowMs: number): ResetInventoryItem[] =>
+const codexItems = (
+  credits: readonly CodexRateLimitResetCredit[],
+  nowMs: number
+): ResetInventoryItem[] =>
   credits
     .map((credit, index): ResetInventoryItem | null => {
       if (credit.status !== 'available') return null;
       // A credit without a readable expiry cannot be placed or trusted.
       const expiresAtMs = parseIsoToMs(credit.expiresAt);
       if (expiresAtMs === null || expiresAtMs <= nowMs) return null;
-      const label = trimmedLabel(credit.title);
       return {
         id: resetCreditRowId(credit, index),
         expiresAtMs,
-        ...(label ? { label } : {}),
+        ...(credit.title ? { label: credit.title } : {}),
       };
     })
     .filter((item): item is ResetInventoryItem => item !== null);
 
-const claudeItems = (grants: readonly GrantLike[], nowMs: number): ResetInventoryItem[] =>
+const claudeItems = (grants: readonly AnthropicResetGrant[], nowMs: number): ResetInventoryItem[] =>
   grants
     .map((grant, index): ResetInventoryItem | null => {
-      const left = grant.resetsLeft ?? 0;
+      const left = grant.resetsLeft;
       if (!(left > 0)) return null;
       // `endsAt: null` is an open-ended grant; a present but unreadable one is
       // dropped rather than shown as open-ended.
       let expiresAtMs: number | null = null;
-      if (grant.endsAt !== null && grant.endsAt !== undefined) {
+      if (grant.endsAt !== null) {
         expiresAtMs = parseIsoToMs(grant.endsAt);
         if (expiresAtMs === null || expiresAtMs <= nowMs) return null;
       }
-      const label = trimmedLabel(grant.label);
       return {
         id: grant.id || `grant-${index}`,
         expiresAtMs,
-        ...(label ? { label } : {}),
+        ...(grant.label ? { label: grant.label } : {}),
         left,
-        total: grant.resetsTotal ?? left,
-        clears: grant.clears ?? [],
+        total: grant.resetsTotal,
+        clears: grant.clears,
       };
     })
     .filter((item): item is ResetInventoryItem => item !== null);
@@ -131,17 +109,14 @@ export function buildResetInventory(
   if (!state || state.status !== 'success') return null;
 
   if (provider === 'codex') {
-    const codex = quota as {
-      rateLimitResetCredits?: CreditLike[];
-      rateLimitResetCreditsError?: string;
-    };
+    const codex = quota as CodexQuotaState;
     if (codex.rateLimitResetCreditsError) {
       return { items: [], error: codex.rateLimitResetCreditsError };
     }
     return { items: codexItems(codex.rateLimitResetCredits ?? [], nowMs).sort(compareItems) };
   }
 
-  const claude = quota as { resetGrants?: GrantLike[] | null; resetGrantsError?: string };
+  const claude = quota as ClaudeQuotaState;
   // `null` means the read failed; `undefined` means grants were never loaded.
   if (claude.resetGrants === null) {
     return { items: [], error: claude.resetGrantsError ?? '' };

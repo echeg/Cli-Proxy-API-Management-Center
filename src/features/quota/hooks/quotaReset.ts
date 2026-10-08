@@ -5,12 +5,32 @@ import type { AuthFileItem, NotificationType } from '@/types';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import type { QuotaAdapter, QuotaMapUpdater } from '../providers';
 
+export type QuotaResetFn = NonNullable<QuotaAdapter['resetQuota']>;
+
+/** The reset call for this credential, or null when it may not spend a reset now. */
+export function resetFnIfAllowed(
+  file: AuthFileItem,
+  adapter: Pick<QuotaAdapter, 'resetQuota'>,
+  state: {
+    disableControls: boolean;
+    quotaStatus?: string;
+    /** Cache keys with a reset in flight; each credential spends one reset at a time. */
+    resettingKeys: ReadonlySet<string>;
+  }
+): QuotaResetFn | null {
+  if (!adapter.resetQuota) return null;
+  if (state.disableControls || file.disabled) return null;
+  if (state.quotaStatus === 'loading') return null;
+  if (state.resettingKeys.has(getQuotaCacheKey(file))) return null;
+  return adapter.resetQuota;
+}
+
 export interface QuotaResetDeps<G> {
   file: AuthFileItem;
   adapter: Pick<QuotaAdapter, 'buildSuccessState'>;
   resetQuotaFn: (file: AuthFileItem, t: TFunction) => Promise<unknown>;
   setQuota: QuotaMapUpdater;
-  setResetting: (updater: (current: string | null) => string | null) => void;
+  setResetting: (cacheKey: string, resetting: boolean) => void;
   notify: (message: string, type: NotificationType) => void;
   t: TFunction;
   displayName: (name: string) => string;
@@ -23,7 +43,7 @@ export async function executeQuotaReset<G>(deps: QuotaResetDeps<G>): Promise<boo
   const { file, adapter, setQuota, notify, t, displayName } = deps;
   const cacheKey = getQuotaCacheKey(file);
   const cacheGeneration = deps.captureGeneration(file.name);
-  deps.setResetting(() => cacheKey);
+  deps.setResetting(cacheKey, true);
   try {
     const data = await deps.resetQuotaFn(file, t);
     return deps.commitIfCurrent(cacheGeneration, () => {
@@ -46,6 +66,6 @@ export async function executeQuotaReset<G>(deps: QuotaResetDeps<G>): Promise<boo
     });
     return false;
   } finally {
-    deps.setResetting((current) => (current === cacheKey ? null : current));
+    deps.setResetting(cacheKey, false);
   }
 }

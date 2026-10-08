@@ -241,7 +241,7 @@ export function QuotaPage() {
   /* Loading and quota actions. */
 
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
-  const { resettingQuotaName, refreshQuota, resetQuota, performReset } = useQuotaActions(
+  const { resettingKeys, refreshQuota, resetQuota, performReset } = useQuotaActions(
     disableControls,
     formatDisplayText
   );
@@ -441,7 +441,7 @@ export function QuotaPage() {
             canRefresh={canUseActions}
             onRefresh={(entry) => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
             onReset={(entry) => performReset(entry.file, QUOTA_ADAPTERS[entry.type])}
-            resettingKey={resettingQuotaName}
+            resettingKeys={resettingKeys}
           />
         ) : viewMode === 'timeline' ? (
           <QuotaTimeline
@@ -461,7 +461,7 @@ export function QuotaPage() {
                 quota={getQuota(entry)}
                 resolvedTheme={resolvedTheme}
                 canRefresh={canUseActions && !entry.file.disabled}
-                resetting={resettingQuotaName === getQuotaCacheKey(entry.file)}
+                resetting={resettingKeys.has(getQuotaCacheKey(entry.file))}
                 entranceDelayMs={cardEntranceDelay(index)}
                 onRefresh={() => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
                 onReset={() => resetQuota(entry.file, QUOTA_ADAPTERS[entry.type])}

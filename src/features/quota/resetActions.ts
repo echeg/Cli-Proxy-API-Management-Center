@@ -26,6 +26,8 @@ export type ResetAction = {
   busy: boolean;
   /** Inline explanation shown while the action is blocked or an outcome is unknown. */
   reason?: string;
+  /** Retries an unknown-outcome claim; offered even when no reset is listed. */
+  retry?: boolean;
   consequence: string;
   note?: string;
   confirmLabel: string;
@@ -67,12 +69,7 @@ const remainingNote = (t: TFunction, remaining: number): string =>
       );
 
 /** Codex spends one credit per subscription; OpenAI picks which, so there is no per-line action. */
-export function codexResetAction(
-  t: TFunction,
-  count: number,
-  state: ActionState
-): ResetAction | null {
-  if (count <= 0) return null;
+export function codexResetAction(t: TFunction, count: number, state: ActionState): ResetAction {
   return {
     ...state,
     label: t('quota_management.resets.use'),
@@ -101,7 +98,13 @@ export function claudeResetAction(
   };
   if (handle.buttonLabel === 'retry') {
     const retry = t('claude_reset.retry');
-    return { ...base, label: retry, consequence: handle.confirmMessage, confirmLabel: retry };
+    return {
+      ...base,
+      retry: true,
+      label: retry,
+      consequence: handle.confirmMessage,
+      confirmLabel: retry,
+    };
   }
   const grant = handle.selectedGrant;
   let consequence = handle.confirmMessage;

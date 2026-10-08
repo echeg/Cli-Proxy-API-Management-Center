@@ -11,7 +11,7 @@ import type { AuthFileItem } from '@/types';
 import { getStatusFromError } from '@/utils/quota';
 import { getQuotaCacheKey } from '@/utils/quota/identity';
 import { enrichQuotaInBackground } from '../quotaEnrichment';
-import { executeQuotaReset } from './quotaReset';
+import { executeQuotaReset, resetFnIfAllowed, type QuotaResetFn } from './quotaReset';
 import { getQuotaMap, getQuotaSetter, type QuotaAdapter, type QuotaCardState } from '../providers';
 
 const getQuotaState = (adapter: QuotaAdapter, file: AuthFileItem): QuotaCardState | undefined =>
@@ -26,7 +26,17 @@ export function useQuotaActions(
   const { t } = useTranslation();
   const showNotification = useNotificationStore((state) => state.showNotification);
   const showConfirmation = useNotificationStore((state) => state.showConfirmation);
-  const [resettingQuotaName, setResettingQuotaName] = useState<string | null>(null);
+  const [resettingKeys, setResettingKeys] = useState<ReadonlySet<string>>(() => new Set());
+  // The guards read this synchronously, so a second click before the re-render cannot
+  // spend another reset, and one credential's reset never unblocks another's.
+  const resettingRef = useRef(resettingKeys);
+  const setResetting = useCallback((cacheKey: string, resetting: boolean) => {
+    const next = new Set(resettingRef.current);
+    if (resetting) next.add(cacheKey);
+    else next.delete(cacheKey);
+    resettingRef.current = next;
+    setResettingKeys(next);
+  }, []);
   const displayNameRef = useRef(displayNameFor);
   useEffect(() => {
     // Pending responses must use the current privacy choice when they finish.
@@ -37,7 +47,7 @@ export function useQuotaActions(
     async (file: AuthFileItem, adapter: QuotaAdapter) => {
       if (disableControls || file.disabled) return;
       const cacheKey = getQuotaCacheKey(file);
-      if (resettingQuotaName === cacheKey) return;
+      if (resettingRef.current.has(cacheKey)) return;
       if (getQuotaState(adapter, file)?.status === 'loading') return;
       const cacheGeneration = captureQuotaCacheGeneration(file.name);
       const setQuota = getQuotaSetter(adapter);
@@ -79,41 +89,35 @@ export function useQuotaActions(
         });
       }
     },
-    [disableControls, resettingQuotaName, showNotification, t]
+    [disableControls, showNotification, t]
   );
 
   // Shared guards: returns the reset call only when this credential may spend a reset now.
   const resetFnFor = useCallback(
-    (file: AuthFileItem, adapter: QuotaAdapter) => {
-      const resetQuotaFn = adapter.resetQuota;
-      if (!resetQuotaFn) return null;
-      if (disableControls || file.disabled) return null;
-      if (getQuotaState(adapter, file)?.status === 'loading') return null;
-      if (resettingQuotaName === getQuotaCacheKey(file)) return null;
-      return resetQuotaFn;
-    },
-    [disableControls, resettingQuotaName]
+    (file: AuthFileItem, adapter: QuotaAdapter) =>
+      resetFnIfAllowed(file, adapter, {
+        disableControls,
+        quotaStatus: getQuotaState(adapter, file)?.status,
+        resettingKeys: resettingRef.current,
+      }),
+    [disableControls]
   );
 
   const runReset = useCallback(
-    (
-      file: AuthFileItem,
-      adapter: QuotaAdapter,
-      resetQuotaFn: NonNullable<QuotaAdapter['resetQuota']>
-    ) =>
+    (file: AuthFileItem, adapter: QuotaAdapter, resetQuotaFn: QuotaResetFn) =>
       executeQuotaReset({
         file,
         adapter,
         resetQuotaFn,
         setQuota: getQuotaSetter(adapter),
-        setResetting: setResettingQuotaName,
+        setResetting,
         notify: showNotification,
         t,
         displayName: (name) => displayNameRef.current(name),
         captureGeneration: captureQuotaCacheGeneration,
         commitIfCurrent: commitIfQuotaCacheCurrent,
       }),
-    [showNotification, t]
+    [setResetting, showNotification, t]
   );
 
   const resetQuota = useCallback(
@@ -146,5 +150,5 @@ export function useQuotaActions(
     [resetFnFor, runReset]
   );
 
-  return { resettingQuotaName, refreshQuota, resetQuota, performReset };
+  return { resettingKeys, refreshQuota, resetQuota, performReset };
 }

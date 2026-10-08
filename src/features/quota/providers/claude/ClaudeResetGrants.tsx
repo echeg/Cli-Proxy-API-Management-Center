@@ -10,7 +10,7 @@ import {
 } from '@/services/api/claudeResetGrants';
 import type { AuthFileItem } from '@/types';
 import { normalizeAuthIndex } from '@/utils/quota';
-import { clearClaudeCooldownAfterClaim } from './claimCooldown';
+import { runClaudeClaim } from './claimCooldown';
 import { resetGrantOperations, RETRY_WINDOW_MS } from './resetGrantOperations';
 import { selectResetGrant } from './selectResetGrant';
 
@@ -81,26 +81,18 @@ export function useClaudeResetGrants(
     lock.current = true;
     setBusy(true);
     try {
-      const answer = await resetGrantOperations.run(key, authIndex, selected);
-      if (!current()) return;
-      const cooldown = await clearClaudeCooldownAfterClaim(authIndex, answer, session);
-      if (!current()) return;
-      showNotification(
-        t(`claude_reset.${answer.unresolved ? 'unknown' : answer.code}`),
-        !answer.unresolved && (answer.code === 'reset' || answer.code === 'already_used')
-          ? 'success'
-          : 'error'
-      );
-      if (cooldown === 'failed') {
-        showNotification(t('quota_management.resets.cooldown_failed'), 'warning');
-      }
-    } catch {
-      if (!current()) return;
-      const unresolved = resetGrantOperations.inspect(key);
-      showNotification(
-        t(`claude_reset.${unresolved && !unresolved.code ? 'unknown' : 'blocked'}`),
-        'error'
-      );
+      await runClaudeClaim({
+        claim: () => resetGrantOperations.run(key, authIndex, selected),
+        authIndex,
+        revision: session,
+        isCurrent: current,
+        hasUnresolvedClaim: () => {
+          const unresolved = resetGrantOperations.inspect(key);
+          return Boolean(unresolved && !unresolved.code);
+        },
+        notify: showNotification,
+        t,
+      });
     } finally {
       lock.current = false;
       // A concurrent page-wide refresh can invalidate this read generation.

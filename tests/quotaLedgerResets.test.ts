@@ -14,13 +14,14 @@ import {
 import {
   claudeResetAction,
   codexResetAction,
+  formatMonthDay,
   type ClaudeResetHandle,
   type ResetAction,
 } from '@/features/quota/resetActions';
 import type { QuotaFileEntry } from '@/features/quota/logic';
 import type { QuotaCardState } from '@/features/quota/providers';
 import { buildResetInventory } from '@/features/quota/resetInventory';
-import { buildResetDisplay } from '@/utils/quota';
+import { buildResetDisplay, formatInstantShort } from '@/utils/quota';
 
 beforeAll(async () => {
   await i18n.changeLanguage('en');
@@ -83,6 +84,9 @@ const claudeQuota = (
   ...extra,
 });
 
+/** Browser-local `MM/DD`, as the Ledger renders it, so assertions hold in any TZ. */
+const md = (iso: string): string => formatMonthDay(Date.parse(iso));
+
 const TWO_CODEX = [
   { id: 'credit-b', expiresAt: '2100-10-29T09:00:00Z', title: 'Full reset' },
   { id: 'credit-a', expiresAt: '2100-10-23T09:30:00Z', title: 'Full reset' },
@@ -90,7 +94,7 @@ const TWO_CODEX = [
 
 const renderLedger = (
   rows: Array<{ type: 'codex' | 'claude' | 'kimi'; name: string; quota: unknown }>,
-  options: { showEmails?: boolean; resettingKey?: string | null } = {}
+  options: { showEmails?: boolean; resettingKeys?: string[] } = {}
 ) => {
   const entries: QuotaFileEntry[] = rows.map((row) => ({
     type: row.type,
@@ -107,7 +111,7 @@ const renderLedger = (
       canRefresh: true,
       onRefresh: () => {},
       onReset: () => {},
-      resettingKey: options.resettingKey ?? null,
+      resettingKeys: new Set(options.resettingKeys),
       now,
     })
   );
@@ -124,20 +128,21 @@ describe('Ledger resets chip', () => {
       renderLedger([{ type: 'codex', name: 'codex-a.json', quota: codexQuota(TWO_CODEX) }])
     );
     expect(chip).not.toBeNull();
-    expect(chip).toContain('2 resets · next expires 10/23');
+    expect(chip).toContain(`2 resets · next expires ${md('2100-10-23T09:30:00Z')}`);
     expect(chip).toContain('aria-expanded="false"');
     expect(chip).toContain('aria-controls="');
     // The title lists every expiry, soonest first.
     const title = chip!.match(/title="([^"]*)"/)?.[1] ?? '';
-    expect(title.indexOf('10/23')).toBeGreaterThan(-1);
-    expect(title.indexOf('10/23')).toBeLessThan(title.indexOf('10/29'));
+    const soon = md('2100-10-23T09:30:00Z');
+    expect(title.indexOf(soon)).toBeGreaterThan(-1);
+    expect(title.indexOf(soon)).toBeLessThan(title.indexOf(md('2100-10-29T09:00:00Z')));
   });
 
   test('uses the singular form for one Claude grant', () => {
     const chip = chipOf(
       renderLedger([{ type: 'claude', name: 'claude-a.json', quota: claudeQuota([grant()]) }])
     );
-    expect(chip).toContain('1 reset · expires 10/22');
+    expect(chip).toContain(`1 reset · expires ${md('2100-10-22T16:00:00Z')}`);
   });
 
   test('turns amber only when the soonest reset expires within three days', () => {
@@ -233,6 +238,27 @@ describe('Ledger resets chip', () => {
     expect(chip(true)).toContain('Loading…');
   });
 
+  test('keeps the toggle of an open drawer after a failed read or the last reset', () => {
+    const openChip = (inventory: { items: []; error?: string }) =>
+      renderToStaticMarkup(
+        createElement(QuotaLedgerResetsChip, {
+          inventory,
+          expanded: true,
+          loading: false,
+          controls: 'drawer-1',
+          showEmails: true,
+          now,
+          onToggle: () => {},
+        })
+      );
+    const failed = openChip({ items: [], error: 'offline' });
+    expect(failed).toMatch(/<button[^>]*aria-expanded="true"/);
+    expect(failed).toContain('Couldn&#x27;t load resets');
+    const empty = openChip({ items: [] });
+    expect(empty).toMatch(/<button[^>]*aria-expanded="true"/);
+    expect(empty).toContain('No resets left');
+  });
+
   test('adds no role="group" beyond the summary windows', () => {
     const markup = renderLedger([
       { type: 'codex', name: 'codex-a.json', quota: codexQuota(TWO_CODEX) },
@@ -247,7 +273,7 @@ describe('Ledger resets drawer', () => {
   const renderDrawer = (
     provider: 'codex' | 'claude',
     quota: unknown,
-    options: { showEmails?: boolean; loading?: boolean } = {}
+    options: { showEmails?: boolean; loading?: boolean; action?: ResetAction } = {}
   ) =>
     renderToStaticMarkup(
       createElement(QuotaLedgerResetsDrawer, {
@@ -257,11 +283,14 @@ describe('Ledger resets drawer', () => {
         loading: options.loading ?? false,
         showEmails: options.showEmails ?? true,
         now,
+        action: options.action,
       })
     );
 
   test('lists every Codex reset with its expiry and the soonest tag', () => {
-    const markup = renderDrawer('codex', codexQuota(TWO_CODEX));
+    const markup = renderDrawer('codex', codexQuota(TWO_CODEX), {
+      action: codexResetAction(t, 2, { blocked: false, busy: false, onConfirm: noop }),
+    });
     expect(markup).toContain('id="drawer-1"');
     expect(markup).not.toContain('role="group"');
     expect(markup).toMatch(/Resets<\/[a-z]+>\s*<span[^>]*>2<\/span>/);
@@ -269,7 +298,9 @@ describe('Ledger resets drawer', () => {
     expect(markup.match(/<li/g)).toHaveLength(2);
     expect(markup.match(/Full reset/g)).toHaveLength(2);
     expect(markup.match(/soonest/g)).toHaveLength(1);
-    expect(markup.indexOf('soonest')).toBeLessThan(markup.indexOf('10/29'));
+    expect(markup.indexOf('soonest')).toBeLessThan(
+      markup.indexOf(formatInstantShort(Date.parse('2100-10-29T09:00:00Z')))
+    );
     const first = buildResetDisplay(null, Date.parse('2100-10-23T09:30:00Z'), now, 'en')!;
     expect(markup).toContain(`expires ${first.absolute} · ${first.relative}`);
     expect(first.relative).toBe('in 14 days');
@@ -376,15 +407,11 @@ describe('Ledger inline reset confirmation', () => {
     expect(three.note).toBe("This can't be undone · 2 resets will remain");
   });
 
-  test('offers no Codex action without resets', () => {
-    expect(codexResetAction(t, 0, { blocked: false, busy: false, onConfirm: noop })).toBeNull();
-  });
-
   test('names the Claude grant, its expiry and the windows it clears', () => {
     const action = claudeResetAction(t, claudeHandle(), { showEmails: true });
     expect(action.consequence).toBe(
       'Spends 1 reset from Claude Opus 5.5 launch: one usage-limit reset for Pro and Max ' +
-        '(expires 10/22); clears 5-hour and 7-day limits'
+        `(expires ${md('2100-10-22T16:00:00Z')}); clears 5-hour and 7-day limits`
     );
     expect(action.note).toBe("This can't be undone · no resets will remain");
     expect(action.confirmLabel).toBe('Use 1 reset');
@@ -471,11 +498,7 @@ describe('Ledger inline reset confirmation', () => {
 });
 
 describe('Ledger drawer reset action', () => {
-  const renderWithAction = (
-    provider: 'codex' | 'claude',
-    quota: unknown,
-    action: ResetAction | null
-  ) =>
+  const renderWithAction = (provider: 'codex' | 'claude', quota: unknown, action: ResetAction) =>
     renderToStaticMarkup(
       createElement(QuotaLedgerResetsDrawer, {
         id: 'drawer-1',
@@ -542,17 +565,44 @@ describe('Ledger drawer reset action', () => {
     expect(markup).toContain('No resets left');
     expect(markup).not.toContain('data-resets-use');
   });
+
+  test('an unknown Claude outcome stays retryable when no reset is listed', () => {
+    const retry = claudeResetAction(t, claudeHandle({ buttonLabel: 'retry', message: 'unknown' }), {
+      showEmails: true,
+    });
+    const spent = renderWithAction('claude', claudeQuota([grant({ resetsLeft: 0 })]), retry);
+    expect(spent).toContain('No resets left');
+    expect(spent).toMatch(/<button[^>]*data-resets-use[^>]*>(<span>)?Retry the same claim/);
+    const unreadable = renderWithAction('claude', claudeQuota(null), retry);
+    expect(unreadable).toContain('Couldn&#x27;t load resets');
+    expect(unreadable).toContain('data-resets-use');
+  });
+
+  test('a fresh Claude action needs a listed reset', () => {
+    const markup = renderWithAction(
+      'claude',
+      claudeQuota([grant({ resetsLeft: 0 })]),
+      claudeResetAction(t, claudeHandle(), { showEmails: true })
+    );
+    expect(markup).toContain('No resets left');
+    expect(markup).not.toContain('data-resets-use');
+  });
 });
 
 describe('Ledger reset wiring', () => {
   test('a row whose reset is in flight cannot be refreshed', () => {
-    const refreshButton = (markup: string) =>
-      markup.match(/<button[^>]*aria-label="Refresh quota for codex-a.json"[^>]*>/)?.[0] ?? '';
-    const rows = [{ type: 'codex' as const, name: 'codex-a.json', quota: codexQuota(TWO_CODEX) }];
-    expect(refreshButton(renderLedger(rows))).not.toContain('disabled');
-    expect(refreshButton(renderLedger(rows, { resettingKey: 'codex-a.json' }))).toContain(
-      'disabled'
-    );
+    const refreshButton = (markup: string, name: string) =>
+      markup.match(new RegExp(`<button[^>]*aria-label="Refresh quota for ${name}"[^>]*>`))?.[0] ??
+      '';
+    const rows = [
+      { type: 'codex' as const, name: 'codex-a.json', quota: codexQuota(TWO_CODEX) },
+      { type: 'codex' as const, name: 'codex-b.json', quota: codexQuota(TWO_CODEX) },
+    ];
+    expect(refreshButton(renderLedger(rows), 'codex-a.json')).not.toContain('disabled');
+    // Each row tracks its own reset; another row's reset leaves this one usable.
+    const busy = renderLedger(rows, { resettingKeys: ['codex-a.json'] });
+    expect(refreshButton(busy, 'codex-a.json')).toContain('disabled');
+    expect(refreshButton(busy, 'codex-b.json')).not.toContain('disabled');
   });
 
   test('the Quota page passes the inline reset flow to the Ledger', () => {
@@ -562,7 +612,7 @@ describe('Ledger reset wiring', () => {
       page.indexOf('/>', page.indexOf('<QuotaLedger'))
     );
     expect(ledger).toContain('performReset(entry.file, QUOTA_ADAPTERS[entry.type])');
-    expect(ledger).toContain('resettingKey={resettingQuotaName}');
+    expect(ledger).toContain('resettingKeys={resettingKeys}');
     expect(ledger).toContain('refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])');
   });
 
