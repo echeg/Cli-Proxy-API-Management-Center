@@ -213,17 +213,18 @@
 - [x] ➕ the footer "Use a reset…" action is a `resetAction` slot filled in Task 6; the card also takes `onReserveClick`/`reserveEditor`/`reservePreview` slots for Task 7
 
 ### Task 6: Inline "Use a reset" in the card
-- [ ] write failing SSR tests:
+- [x] write failing SSR tests:
   - Codex card: after the initial "Use a reset…" the action is built with `codexResetAction` (busy/blocked props), and the confirm step text is reused from the Ledger
   - Claude card: the action mount component (from `QuotaLedgerResets.tsx`) is rendered only when the card's action is open
   - the unresolved-claim state shows "Reset outcome unknown" and keeps the action reachable (`resetGrantOperations.hasUnresolved(claudeResetOperationKey(...))`)
   - while resetting, refresh is disabled and the card has `aria-busy`
-- [ ] in `QuotaLedgerResets.tsx`, export `ResetActionFooter`, and extract the open-only Claude mount into an exported component used by both `ClaudeLedgerResetsDrawer` and the card. Keep exactly one `= useClaudeResetGrants(` in the file, as the existing guard requires.
-- [ ] wire the card footer:
+- [x] in `QuotaLedgerResets.tsx`, export `ResetActionFooter`, and extract the open-only Claude mount into an exported component used by both `ClaudeLedgerResetsDrawer` and the card. Keep exactly one `= useClaudeResetGrants(` in the file, as the existing guard requires.
+- [x] wire the card footer:
   - Codex → `performReset(entry.file, QUOTA_ADAPTERS.codex)`
   - Claude → the shared mount, `onRefresh` → `refreshQuota`, `onBusyChange` lifted to the card
   - focus returns to "Use a reset…" after cancel or finish; Esc cancels
-- [ ] run `bun test tests/quotaCompactCard.test.ts tests/quotaLedgerResets.test.ts tests/claudeResetGrants.test.ts` and `bun run verify` - must pass before task 7
+- [x] run `bun test tests/quotaCompactCard.test.ts tests/quotaLedgerResets.test.ts tests/claudeResetGrants.test.ts` and `bun run verify` - must pass before task 7
+- [x] ➕ wiring lives in a new container `components/QuotaCompactCardItem.tsx` (model + reset action + busy state); `ResetActionFooter` gained `initialConfirming`/`onClose`, and the open-only Claude read is the exported `ClaudeResetActionMount` (render-prop) used by both the Ledger drawer and the card
 
 ### Task 7: Inline reserve editor in the card
 - [ ] write failing tests in `tests/quotaReserveSave.test.ts` for `saveQuotaReserve({ file, draft, revision }, deps)`. Spy on `authFilesApi.patchFields` and inject `reloadReserveVerdicts` and a revision check.

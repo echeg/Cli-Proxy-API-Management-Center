@@ -13,7 +13,7 @@
  * `ClaudeLedgerResetsDrawer` mounts only while its drawer is open.
  */
 
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button } from '@/components/ui/Button';
@@ -188,15 +188,22 @@ export function QuotaLedgerResetsConfirm({
   );
 }
 
-function ResetActionFooter({
+/** "Use a reset…" then the inline confirm; shared by the Ledger drawer and the compact cards. */
+export function ResetActionFooter({
   provider,
   action,
+  initialConfirming = false,
+  onClose,
 }: {
   provider: QuotaProviderType;
   action: ResetAction;
+  /** Open straight on the confirm step (the first click happened elsewhere). */
+  initialConfirming?: boolean;
+  /** Called when the confirm step closes after Cancel, Esc or a finished reset. */
+  onClose?: () => void;
 }) {
   const { t } = useTranslation();
-  const [confirming, setConfirming] = useState(false);
+  const [confirming, setConfirming] = useState(initialConfirming);
   const ref = useRef<HTMLDivElement>(null);
   const returnFocus = useRef(false);
   useEffect(() => {
@@ -207,6 +214,7 @@ function ResetActionFooter({
   const close = () => {
     returnFocus.current = true;
     setConfirming(false);
+    onClose?.();
   };
   const confirm = () => {
     if (action.blocked || action.busy) return;
@@ -354,18 +362,47 @@ export function QuotaLedgerResetsDrawer({
   );
 }
 
-type ClaudeDrawerProps = Omit<DrawerProps, 'provider' | 'action'> & {
+type ClaudeMountProps = {
   file: AuthFileItem;
   /** Changes when the stored quota changes, so the hook re-reads fresh status. */
   refreshToken: unknown;
   enabled: boolean;
   disabled: boolean;
   displayName: string;
+  showEmails: boolean;
   onRefresh: () => void;
   onBusyChange: (busy: boolean) => void;
+  children: (action: ResetAction) => ReactNode;
 };
 
-/** Mounting this reads fresh grant status, so the row renders it only while the drawer is open. */
+/**
+ * Mounting this reads fresh grant status, so callers render it only while the
+ * use-a-reset flow is open (an open drawer or an armed card).
+ */
+export function ClaudeResetActionMount({
+  file,
+  refreshToken,
+  enabled,
+  disabled,
+  displayName,
+  showEmails,
+  onRefresh,
+  onBusyChange,
+  children,
+}: ClaudeMountProps) {
+  const { t } = useTranslation();
+  const reset = useClaudeResetGrants(file, enabled, disabled, refreshToken, onRefresh, displayName);
+  useEffect(() => {
+    onBusyChange(reset.busy);
+  }, [reset.busy, onBusyChange]);
+  useEffect(() => () => onBusyChange(false), [onBusyChange]);
+  return <>{children(claudeResetAction(t, reset, { showEmails }))}</>;
+}
+
+type ClaudeDrawerProps = Omit<DrawerProps, 'provider' | 'action'> &
+  Omit<ClaudeMountProps, 'children' | 'showEmails'>;
+
+/** The drawer reads fresh grant status, so the row renders it only while open. */
 export function ClaudeLedgerResetsDrawer({
   file,
   refreshToken,
@@ -376,12 +413,18 @@ export function ClaudeLedgerResetsDrawer({
   onBusyChange,
   ...drawer
 }: ClaudeDrawerProps) {
-  const { t } = useTranslation();
-  const reset = useClaudeResetGrants(file, enabled, disabled, refreshToken, onRefresh, displayName);
-  useEffect(() => {
-    onBusyChange(reset.busy);
-  }, [reset.busy, onBusyChange]);
-  useEffect(() => () => onBusyChange(false), [onBusyChange]);
-  const action = claudeResetAction(t, reset, { showEmails: drawer.showEmails });
-  return <QuotaLedgerResetsDrawer {...drawer} provider="claude" action={action} />;
+  return (
+    <ClaudeResetActionMount
+      file={file}
+      refreshToken={refreshToken}
+      enabled={enabled}
+      disabled={disabled}
+      displayName={displayName}
+      showEmails={drawer.showEmails}
+      onRefresh={onRefresh}
+      onBusyChange={onBusyChange}
+    >
+      {(action) => <QuotaLedgerResetsDrawer {...drawer} provider="claude" action={action} />}
+    </ClaudeResetActionMount>
+  );
 }
