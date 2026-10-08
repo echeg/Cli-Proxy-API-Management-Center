@@ -89,7 +89,7 @@
 - **CRITICAL: update this plan file when scope changes during implementation**
 - Run focused tests after each change, and `bun run verify` at the end of each task.
 - Maintain backward compatibility. Cards and AuthFiles behavior must not change, apart from the upstream sync and Claude cooldown parity.
-- New translation keys go under the fork-only namespace `quota_management.resets.*` in **all five** locales (en, ru, zh-CN, zh-TW, vi). Never add keys to upstream-owned `claude_reset.*` / `codex_quota.*`; that avoids sync conflicts and keeps the `claude_reset` parity test valid.
+- New translation keys go under the fork-only namespace `quota_management.resets.*` in **all six** locales (en, ru, zh-CN, zh-TW, vi, ko — `ko` arrived with the Task 1 upstream sync). Never add keys to upstream-owned `claude_reset.*` / `codex_quota.*`; that avoids sync conflicts and keeps the `claude_reset` parity test valid.
 - Never spend a live reset during development or verification.
 
 ## Testing Strategy
@@ -120,11 +120,13 @@
 ## Implementation Steps
 
 ### Task 1: Sync upstream/main into the working branch
-- [ ] run `git fetch upstream` then `git merge --no-ff upstream/main` (merge commit; no rebase, no force-push). Resolve the only conflict, `tests/providerModelOptions.test.ts`, by taking upstream's side: `translations` via `createInstance()` + top-level `await translations.init(...)`, and `{ i18n: translations }`. Drop the fork's `fieldI18n`/`beforeAll` variant and any import that becomes unused.
-- [ ] check that the auto-merged `src/features/quota/components/QuotaCard.tsx` renders upstream `<ClaudeResetGrantDetails>` exactly once (right after the "Resets remaining" count), that the fork's `displayName` changes survive, and that `src/features/quota/providers/claude/ClaudeResetGrants.tsx` exposes both `displayName` and `grants`
-- [ ] add every key that is in `src/i18n/locales/en.json` but missing from `src/i18n/locales/vi.json` (about 39: fork-only ledger/routing/fast-mode keys plus `claude_quota.cloud_session_credits`), with Vietnamese translations and identical `{{tokens}}`. Compute the list by flattening both files.
-- [ ] run `bun install --frozen-lockfile`, then `bun test tests/vietnameseLocale.test.ts tests/providerModelOptions.test.ts tests/claudeResetGrants.test.ts tests/codexQuotaReset.test.ts` - must pass (these existing suites are the tests for this task; no new tests needed)
-- [ ] run `bun run verify` - must pass before task 2
+- [x] run `git fetch upstream` then `git merge --no-ff upstream/main` (merge commit; no rebase, no force-push). Resolve the only conflict, `tests/providerModelOptions.test.ts`, by taking upstream's side: `translations` via `createInstance()` + top-level `await translations.init(...)`, and `{ i18n: translations }`. Drop the fork's `fieldI18n`/`beforeAll` variant and any import that becomes unused.
+- [x] check that the auto-merged `src/features/quota/components/QuotaCard.tsx` renders upstream `<ClaudeResetGrantDetails>` exactly once (right after the "Resets remaining" count), that the fork's `displayName` changes survive, and that `src/features/quota/providers/claude/ClaudeResetGrants.tsx` exposes both `displayName` and `grants`
+- [x] add every key that is in `src/i18n/locales/en.json` but missing from `src/i18n/locales/vi.json` (about 39: fork-only ledger/routing/fast-mode keys plus `claude_quota.cloud_session_credits`), with Vietnamese translations and identical `{{tokens}}`. Compute the list by flattening both files.
+- [x] run `bun install --frozen-lockfile`, then `bun test tests/vietnameseLocale.test.ts tests/providerModelOptions.test.ts tests/claudeResetGrants.test.ts tests/codexQuotaReset.test.ts` - must pass (these existing suites are the tests for this task; no new tests needed)
+- [x] run `bun run verify` - must pass before task 2
+- [x] ➕ upstream added a Korean locale (`ko.json`, `tests/koreanLocale.test.ts`, upstream `f03160e`) after this plan was written: added the same 37 missing keys to `ko.json`. Later tasks that say "all five locales" now mean six (en, ru, zh-CN, zh-TW, vi, ko).
+- [x] ➕ fixed order-dependent `tests/authFileCooldowns.test.ts` failure exposed by the merge (upstream suites switch the shared i18n to `en`; the hint's apostrophe is HTML-escaped in markup): compare against escaped text
 
 ### Task 2: Load Claude reset grants into the quota store
 - [ ] write failing tests in `tests/claudeQuotaResetGrants.test.ts` using `spyOn(apiCallApi, 'request')` and routing by URL:
