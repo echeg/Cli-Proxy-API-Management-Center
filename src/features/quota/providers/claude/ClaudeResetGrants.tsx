@@ -124,6 +124,8 @@ export function useClaudeResetGrants(
   return {
     count: status?.grants.reduce((sum, grant) => sum + grant.resetsLeft, 0) ?? null,
     grants: status?.grants ?? [],
+    /** The grant a fresh claim would spend; absent for retries and before the read. */
+    selectedGrant: pending ? undefined : status?.grants.find((grant) => grant.id === selected),
     busy,
     blocked,
     confirm,

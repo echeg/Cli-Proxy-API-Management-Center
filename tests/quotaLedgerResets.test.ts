@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, test } from 'bun:test';
+import { readFileSync } from 'node:fs';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import i18n from '@/i18n';
@@ -7,8 +8,15 @@ import type { AnthropicResetGrant } from '@/services/api/claudeResetGrants';
 import { QuotaLedger } from '@/features/quota/components/QuotaLedger';
 import {
   QuotaLedgerResetsChip,
+  QuotaLedgerResetsConfirm,
   QuotaLedgerResetsDrawer,
 } from '@/features/quota/components/QuotaLedgerResets';
+import {
+  claudeResetAction,
+  codexResetAction,
+  type ClaudeResetHandle,
+  type ResetAction,
+} from '@/features/quota/resetActions';
 import type { QuotaFileEntry } from '@/features/quota/logic';
 import type { QuotaCardState } from '@/features/quota/providers';
 import { buildResetInventory } from '@/features/quota/resetInventory';
@@ -82,7 +90,7 @@ const TWO_CODEX = [
 
 const renderLedger = (
   rows: Array<{ type: 'codex' | 'claude' | 'kimi'; name: string; quota: unknown }>,
-  options: { showEmails?: boolean } = {}
+  options: { showEmails?: boolean; resettingKey?: string | null } = {}
 ) => {
   const entries: QuotaFileEntry[] = rows.map((row) => ({
     type: row.type,
@@ -98,6 +106,8 @@ const renderLedger = (
       showEmails: options.showEmails ?? true,
       canRefresh: true,
       onRefresh: () => {},
+      onReset: () => {},
+      resettingKey: options.resettingKey ?? null,
       now,
     })
   );
@@ -310,5 +320,264 @@ describe('Ledger resets drawer', () => {
     );
     expect(markup).toContain('Couldn&#x27;t load resets');
     expect(markup).not.toContain('Use a reset…');
+  });
+});
+
+const t = i18n.t.bind(i18n);
+const noop = () => {};
+
+const claudeHandle = (overrides: Partial<ClaudeResetHandle> = {}): ClaudeResetHandle => ({
+  blocked: false,
+  busy: false,
+  message: '',
+  buttonLabel: 'use',
+  confirmMessage: 'fresh confirmation from the hook',
+  count: 1,
+  selectedGrant: grant(),
+  execute: async () => {},
+  ...overrides,
+});
+
+const renderConfirm = (action: ResetAction, busy = action.busy) =>
+  renderToStaticMarkup(
+    createElement(QuotaLedgerResetsConfirm, {
+      consequence: action.consequence,
+      note: action.note,
+      confirmLabel: action.confirmLabel,
+      busy,
+      onConfirm: noop,
+      onCancel: noop,
+    })
+  );
+
+describe('Ledger inline reset confirmation', () => {
+  test('explains what a Codex reset does and how many remain', () => {
+    const action = codexResetAction(t, 2, { blocked: false, busy: false, onConfirm: noop })!;
+    expect(action.consequence).toBe(
+      'OpenAI redeems one of your 2 resets; your Codex rate limits are cleared and the proxy ' +
+        'cooldown for this account is cleared'
+    );
+    expect(action.note).toBe("This can't be undone · 1 reset will remain");
+    expect(action.label).toBe('Use a reset…');
+    const markup = renderConfirm(action);
+    expect(markup).toContain('OpenAI redeems one of your 2 resets');
+    expect(markup).toContain('This can&#x27;t be undone · 1 reset will remain');
+    expect(markup).toMatch(/<button[^>]*>(<span>)?Cancel/);
+    expect(markup).toMatch(/<button[^>]*>(<span>)?Use 1 reset/);
+    expect(markup).not.toContain('disabled');
+    expect(markup).not.toContain('role="group"');
+  });
+
+  test('words the last Codex reset and the remaining count', () => {
+    const one = codexResetAction(t, 1, { blocked: false, busy: false, onConfirm: noop })!;
+    expect(one.consequence).toContain('OpenAI redeems your last reset');
+    expect(one.note).toBe("This can't be undone · no resets will remain");
+    const three = codexResetAction(t, 3, { blocked: false, busy: false, onConfirm: noop })!;
+    expect(three.note).toBe("This can't be undone · 2 resets will remain");
+  });
+
+  test('offers no Codex action without resets', () => {
+    expect(codexResetAction(t, 0, { blocked: false, busy: false, onConfirm: noop })).toBeNull();
+  });
+
+  test('names the Claude grant, its expiry and the windows it clears', () => {
+    const action = claudeResetAction(t, claudeHandle(), { showEmails: true });
+    expect(action.consequence).toBe(
+      'Spends 1 reset from Claude Opus 5.5 launch: one usage-limit reset for Pro and Max ' +
+        '(expires 10/22); clears 5-hour and 7-day limits'
+    );
+    expect(action.note).toBe("This can't be undone · no resets will remain");
+    expect(action.confirmLabel).toBe('Use 1 reset');
+    expect(action.label).toBe('Use a reset…');
+    expect(action.blocked).toBe(false);
+  });
+
+  test('masks the Claude grant label when emails are hidden', () => {
+    const action = claudeResetAction(
+      t,
+      claudeHandle({
+        count: 2,
+        selectedGrant: grant({ label: 'Grant for alice@example.com', endsAt: null, clears: [] }),
+      }),
+      { showEmails: false }
+    );
+    expect(action.consequence).toBe(
+      'Spends 1 reset from Grant for a•••@e•••.com; clears eligible usage limits'
+    );
+    expect(action.note).toBe("This can't be undone · 1 reset will remain");
+  });
+
+  test('joins any number of cleared Claude windows', () => {
+    const consequence = (clears: AnthropicResetGrant['clears']) =>
+      claudeResetAction(t, claudeHandle({ selectedGrant: grant({ clears }) }), {
+        showEmails: true,
+      }).consequence;
+    expect(consequence(['five_hour'])).toEndWith('; clears 5-hour limits');
+    expect(consequence(['five_hour', 'seven_day', 'seven_day_overage_included'])).toEndWith(
+      '; clears 5-hour, 7-day and 7-day incl. overage limits'
+    );
+  });
+
+  test('retries an unknown Claude outcome with the hook confirmation', () => {
+    const action = claudeResetAction(
+      t,
+      claudeHandle({
+        buttonLabel: 'retry',
+        message: 'unknown',
+        confirmMessage: 'retry confirmation from the hook',
+        selectedGrant: undefined,
+      }),
+      { showEmails: true }
+    );
+    expect(action.consequence).toBe('retry confirmation from the hook');
+    expect(action.note).toBeUndefined();
+    expect(action.label).toBe('Retry the same claim');
+    expect(action.confirmLabel).toBe('Retry the same claim');
+    expect(action.reason).toBe(t('claude_reset.unknown'));
+  });
+
+  test('a blocked Claude action carries its reason', () => {
+    const action = claudeResetAction(
+      t,
+      claudeHandle({ blocked: true, message: 'expired', buttonLabel: 'retry' }),
+      { showEmails: true }
+    );
+    expect(action.blocked).toBe(true);
+    expect(action.reason).toBe(t('claude_reset.expired'));
+  });
+
+  test('the Claude action spends through the hook execute()', async () => {
+    let calls = 0;
+    const action = claudeResetAction(
+      t,
+      claudeHandle({
+        execute: async () => {
+          calls += 1;
+        },
+      }),
+      { showEmails: true }
+    );
+    await action.onConfirm();
+    expect(calls).toBe(1);
+  });
+
+  test('a busy reset shows progress with both buttons disabled', () => {
+    const action = codexResetAction(t, 2, { blocked: false, busy: true, onConfirm: noop })!;
+    const markup = renderConfirm(action);
+    expect(markup).toContain('Using reset…');
+    expect(markup).not.toContain('Use 1 reset');
+    expect(markup.match(/<button[^>]*disabled=""/g)).toHaveLength(2);
+  });
+});
+
+describe('Ledger drawer reset action', () => {
+  const renderWithAction = (
+    provider: 'codex' | 'claude',
+    quota: unknown,
+    action: ResetAction | null
+  ) =>
+    renderToStaticMarkup(
+      createElement(QuotaLedgerResetsDrawer, {
+        id: 'drawer-1',
+        provider,
+        inventory: buildResetInventory(provider, quota, now),
+        loading: false,
+        showEmails: true,
+        now,
+        action,
+      })
+    );
+
+  test('an available action enables "Use a reset…"', () => {
+    const markup = renderWithAction(
+      'codex',
+      codexQuota(TWO_CODEX),
+      codexResetAction(t, 2, { blocked: false, busy: false, onConfirm: noop })
+    );
+    const use = markup.match(/<button[^>]*data-resets-use[^>]*>/)?.[0];
+    expect(use).toBeDefined();
+    expect(use).not.toContain('disabled');
+  });
+
+  test('a blocked Claude action shows its reason inline and disables the button', () => {
+    const markup = renderWithAction(
+      'claude',
+      claudeQuota([grant()]),
+      claudeResetAction(t, claudeHandle({ blocked: true, message: 'read_error' }), {
+        showEmails: true,
+      })
+    );
+    expect(markup).toContain(t('claude_reset.read_error'));
+    expect(markup.match(/<button[^>]*data-resets-use[^>]*>/)?.[0]).toContain('disabled');
+  });
+
+  test('an unknown Claude outcome offers the same-claim retry', () => {
+    const markup = renderWithAction(
+      'claude',
+      claudeQuota([grant()]),
+      claudeResetAction(t, claudeHandle({ buttonLabel: 'retry', message: 'unknown' }), {
+        showEmails: true,
+      })
+    );
+    expect(markup).toMatch(/<button[^>]*data-resets-use[^>]*>(<span>)?Retry the same claim/);
+    expect(markup).not.toContain('Use a reset…');
+  });
+
+  test('a reset in flight shows the busy confirmation in the drawer', () => {
+    const markup = renderWithAction(
+      'codex',
+      codexQuota(TWO_CODEX),
+      codexResetAction(t, 2, { blocked: false, busy: true, onConfirm: noop })
+    );
+    expect(markup).toContain('Using reset…');
+    expect(markup.match(/<button[^>]*disabled=""/g)).toHaveLength(2);
+  });
+
+  test('a Codex drawer without resets has no action', () => {
+    const markup = renderWithAction(
+      'codex',
+      codexQuota([]),
+      codexResetAction(t, 0, { blocked: false, busy: false, onConfirm: noop })
+    );
+    expect(markup).toContain('No resets left');
+    expect(markup).not.toContain('data-resets-use');
+  });
+});
+
+describe('Ledger reset wiring', () => {
+  test('a row whose reset is in flight cannot be refreshed', () => {
+    const refreshButton = (markup: string) =>
+      markup.match(/<button[^>]*aria-label="Refresh quota for codex-a.json"[^>]*>/)?.[0] ?? '';
+    const rows = [{ type: 'codex' as const, name: 'codex-a.json', quota: codexQuota(TWO_CODEX) }];
+    expect(refreshButton(renderLedger(rows))).not.toContain('disabled');
+    expect(refreshButton(renderLedger(rows, { resettingKey: 'codex-a.json' }))).toContain(
+      'disabled'
+    );
+  });
+
+  test('the Quota page passes the inline reset flow to the Ledger', () => {
+    const page = readFileSync('src/features/quota/QuotaPage.tsx', 'utf8');
+    const ledger = page.slice(
+      page.indexOf('<QuotaLedger'),
+      page.indexOf('/>', page.indexOf('<QuotaLedger'))
+    );
+    expect(ledger).toContain('performReset(entry.file, QUOTA_ADAPTERS[entry.type])');
+    expect(ledger).toContain('resettingKey={resettingQuotaName}');
+    expect(ledger).toContain('refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])');
+  });
+
+  test('the confirm step focuses Cancel, cancels on Esc and returns focus to the button', () => {
+    const resets = readFileSync('src/features/quota/components/QuotaLedgerResets.tsx', 'utf8');
+    expect(resets).toContain("querySelector<HTMLButtonElement>('[data-resets-cancel]')?.focus()");
+    expect(resets).toContain("event.key !== 'Escape' || busy");
+    expect(resets).toContain("querySelector<HTMLButtonElement>('[data-resets-use]')?.focus()");
+  });
+
+  test('the Claude hook is mounted only by the open drawer', () => {
+    const ledger = readFileSync('src/features/quota/components/QuotaLedger.tsx', 'utf8');
+    const resets = readFileSync('src/features/quota/components/QuotaLedgerResets.tsx', 'utf8');
+    expect(ledger).not.toContain('useClaudeResetGrants(');
+    expect(resets.match(/= useClaudeResetGrants\(/g)).toHaveLength(1);
+    expect(ledger).toMatch(/resetsOpen &&[\s\S]*ClaudeLedgerResetsDrawer/);
   });
 });

@@ -6,28 +6,29 @@
  * `LedgerRow`; the row owns the expanded state and the inventory, and passes
  * both down. Everything here renders from `buildResetInventory`, never from
  * `QuotaBody` classes — those bind at module init and break SSR tests.
+ *
+ * Using a reset is a two-step inline confirmation in the drawer footer. The
+ * spending itself stays in the existing flows: Codex through the page's
+ * `performReset`, Claude through `useClaudeResetGrants().execute()`, which
+ * `ClaudeLedgerResetsDrawer` mounts only while its drawer is open.
  */
 
+import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { Button } from '@/components/ui/Button';
+import type { AuthFileItem } from '@/types';
 import { buildResetDisplay, formatInstantShort } from '@/utils/quota';
 import { DAY_MS } from '@/utils/time/durations';
 import { maskQuotaText } from '../ledgerModel';
+import { useClaudeResetGrants } from '../providers/claude/ClaudeResetGrants';
 import type { QuotaProviderType } from '../providers/types';
+import { claudeResetAction, countResets, formatMonthDay, type ResetAction } from '../resetActions';
 import type { ResetInventory, ResetInventoryItem } from '../resetInventory';
 import styles from './QuotaLedgerResets.module.scss';
 
 /** The chip turns amber when the soonest reset lapses within this window. */
 const EXPIRY_WARNING_MS = 3 * DAY_MS;
-
-/** Resets a subscription holds: a Codex credit is one, a Claude grant counts its `left`. */
-const countResets = (items: readonly ResetInventoryItem[]): number =>
-  items.reduce((sum, item) => sum + (item.left ?? 1), 0);
-
-/** `MM/DD`, browser-local — the chip's short form of `formatInstantShort`. */
-const formatMonthDay = (ms: number): string =>
-  new Date(ms).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' });
 
 const itemLabel = (
   t: TFunction,
@@ -126,6 +127,118 @@ export function QuotaLedgerResetsChip({
   );
 }
 
+type ConfirmProps = {
+  consequence: string;
+  note?: string;
+  confirmLabel: string;
+  busy: boolean;
+  /** Blocks the confirm button without the busy label (e.g. a stale Claude read). */
+  blocked?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+};
+
+/** The second, amber step: Cancel takes focus, Esc cancels. */
+export function QuotaLedgerResetsConfirm({
+  consequence,
+  note,
+  confirmLabel,
+  busy,
+  blocked = false,
+  onConfirm,
+  onCancel,
+}: ConfirmProps) {
+  const { t } = useTranslation();
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.querySelector<HTMLButtonElement>('[data-resets-cancel]')?.focus();
+  }, []);
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key !== 'Escape' || busy) return;
+    event.stopPropagation();
+    onCancel();
+  };
+
+  return (
+    <div ref={ref} className={styles.confirm} data-resets-confirm="" onKeyDown={onKeyDown}>
+      <p className={styles.consequence}>{consequence}</p>
+      {note && <p className={styles.confirmNote}>{note}</p>}
+      <div className={styles.confirmActions}>
+        <Button
+          variant="secondary"
+          size="sm"
+          data-resets-cancel=""
+          disabled={busy}
+          onClick={onCancel}
+        >
+          {t('quota_management.resets.cancel')}
+        </Button>
+        <Button variant="primary" size="sm" disabled={busy || blocked} onClick={onConfirm}>
+          {busy ? t('quota_management.resets.using') : confirmLabel}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ResetActionFooter({
+  provider,
+  action,
+}: {
+  provider: QuotaProviderType;
+  action?: ResetAction | null;
+}) {
+  const { t } = useTranslation();
+  const [confirming, setConfirming] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const returnFocus = useRef(false);
+  useEffect(() => {
+    if (confirming || !returnFocus.current) return;
+    returnFocus.current = false;
+    ref.current?.querySelector<HTMLButtonElement>('[data-resets-use]')?.focus();
+  }, [confirming]);
+  const close = () => {
+    returnFocus.current = true;
+    setConfirming(false);
+  };
+  const confirm = () => {
+    if (!action || action.blocked || action.busy) return;
+    void Promise.resolve(action.onConfirm()).finally(close);
+  };
+
+  return (
+    <div ref={ref} className={styles.footer}>
+      {provider === 'codex' && (
+        <span className={styles.note}>{t('quota_management.resets.codex_choice_note')}</span>
+      )}
+      {action?.reason && <span className={styles.reason}>{action.reason}</span>}
+      {action && (confirming || action.busy) ? (
+        <QuotaLedgerResetsConfirm
+          consequence={action.consequence}
+          note={action.note}
+          confirmLabel={action.confirmLabel}
+          busy={action.busy}
+          blocked={action.blocked}
+          onConfirm={confirm}
+          onCancel={close}
+        />
+      ) : (
+        action !== null && (
+          <Button
+            variant="secondary"
+            size="sm"
+            data-resets-use=""
+            disabled={!action || action.blocked}
+            onClick={() => setConfirming(true)}
+          >
+            {action?.label ?? t('quota_management.resets.use')}
+          </Button>
+        )
+      )}
+    </div>
+  );
+}
+
 type DrawerProps = {
   id: string;
   provider: QuotaProviderType;
@@ -133,8 +246,8 @@ type DrawerProps = {
   loading: boolean;
   showEmails: boolean;
   now: number;
-  /** Starts the use-a-reset flow; the button is disabled until a flow is wired. */
-  onUse?: () => void;
+  /** The use-a-reset flow; without one the button stays disabled, `null` hides it. */
+  action?: ResetAction | null;
 };
 
 function ResetLine({
@@ -194,7 +307,7 @@ export function QuotaLedgerResetsDrawer({
   loading,
   showEmails,
   now,
-  onUse,
+  action,
 }: DrawerProps) {
   const { t } = useTranslation();
   const items = inventory?.items ?? [];
@@ -216,14 +329,7 @@ export function QuotaLedgerResetsDrawer({
             <ResetLine key={item.id} item={item} index={index} showEmails={showEmails} now={now} />
           ))}
         </ul>
-        <div className={styles.footer}>
-          {provider === 'codex' && (
-            <span className={styles.note}>{t('quota_management.resets.codex_choice_note')}</span>
-          )}
-          <Button variant="secondary" size="sm" disabled={!onUse} onClick={onUse}>
-            {t('quota_management.resets.use')}
-          </Button>
-        </div>
+        <ResetActionFooter provider={provider} action={action} />
       </>
     );
   }
@@ -237,4 +343,36 @@ export function QuotaLedgerResetsDrawer({
       {body}
     </section>
   );
+}
+
+type ClaudeDrawerProps = Omit<DrawerProps, 'provider' | 'action'> & {
+  file: AuthFileItem;
+  /** Changes when the stored quota changes, so the hook re-reads fresh status. */
+  refreshToken: unknown;
+  enabled: boolean;
+  disabled: boolean;
+  displayName: string;
+  onRefresh: () => void;
+  onBusyChange: (busy: boolean) => void;
+};
+
+/** Mounting this reads fresh grant status, so the row renders it only while the drawer is open. */
+export function ClaudeLedgerResetsDrawer({
+  file,
+  refreshToken,
+  enabled,
+  disabled,
+  displayName,
+  onRefresh,
+  onBusyChange,
+  ...drawer
+}: ClaudeDrawerProps) {
+  const { t } = useTranslation();
+  const reset = useClaudeResetGrants(file, enabled, disabled, refreshToken, onRefresh, displayName);
+  useEffect(() => {
+    onBusyChange(reset.busy);
+  }, [reset.busy, onBusyChange]);
+  useEffect(() => () => onBusyChange(false), [onBusyChange]);
+  const action = claudeResetAction(t, reset, { showEmails: drawer.showEmails });
+  return <QuotaLedgerResetsDrawer {...drawer} provider="claude" action={action} />;
 }

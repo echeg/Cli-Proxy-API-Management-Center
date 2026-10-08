@@ -196,23 +196,24 @@
 - [x] ➕ an open drawer keeps its chip as a toggle during a refresh ("Loading…"), a failed read, or after the last reset is gone ("No resets left"), so it can always be closed. Claude grants count `resetsLeft` toward the chip/header total.
 
 ### Task 7: Inline "Use a reset" action in the drawer
-- [ ] write failing SSR tests for the exported confirmation block and drawer states:
+- [x] write failing SSR tests for the exported confirmation block and drawer states:
   - Codex consequence text "OpenAI redeems one of your 2 resets; your Codex rate limits are cleared and the proxy cooldown for this account is cleared" plus "This can't be undone · 1 reset will remain"
   - Claude fresh text "Spends 1 reset from <label> (expires 10/22); clears 5-hour and 7-day limits" and the retry variant from `confirmMessage`
   - busy state "Using reset…" with both buttons disabled
   - Claude blocked state with an inline reason from `claude_reset.*` (unknown outcome → "Retry the same claim")
   - Codex with zero resets → no action
-- [ ] wire `QuotaPage.tsx` → `QuotaLedger`:
+- [x] wire `QuotaPage.tsx` → `QuotaLedger`:
   - pass `performReset` (Codex) and `resettingQuotaName`
   - pass the existing `refreshQuota` callback for the Claude hook's `onRefresh`
   - disable the row's refresh button while that row's reset is in flight
-- [ ] Codex drawer: "Use a reset…" opens the inline confirm step; "Use 1 reset" calls `performReset(file, CODEX adapter)`
-- [ ] Claude drawer:
+- [x] Codex drawer: "Use a reset…" opens the inline confirm step; "Use 1 reset" calls `performReset(file, CODEX adapter)`
+- [x] Claude drawer:
   - mount `useClaudeResetGrants` only while the drawer is open (`enabled` when the quota is `success`)
   - render `blocked`/`busy`/`message`/`buttonLabel`/`confirmMessage`
   - "Use 1 reset" calls `execute()`
-- [ ] keyboard and focus: Cancel gets default focus when the confirm step opens, Esc cancels it, and focus returns to "Use a reset…". Add the confirm-step keys to all five locales.
-- [ ] run `bun test tests/quotaLedgerResets.test.ts tests/claudeResetGrants.test.ts tests/quotaResetExecution.test.ts` and `bun run verify` - must pass before task 8
+- [x] keyboard and focus: Cancel gets default focus when the confirm step opens, Esc cancels it, and focus returns to "Use a reset…". Add the confirm-step keys to all five locales (done in all six, including `ko`).
+- [x] run `bun test tests/quotaLedgerResets.test.ts tests/claudeResetGrants.test.ts tests/quotaResetExecution.test.ts` and `bun run verify` - must pass before task 8
+- [x] ➕ the pure action builders (`codexResetAction`, `claudeResetAction`, `countResets`, `formatMonthDay`) live in `src/features/quota/resetActions.ts` so `QuotaLedgerResets.tsx` exports only components (react-refresh lint). Window lists join through the `quota_management.resets.windows_and` key, because the TS lib (ES2020) lacks `Intl.ListFormat`. The hook also exposes `selectedGrant`, so the Claude confirm names the grant it spends.
 
 ### Task 8: Quota reserve — data normalization and Ledger display
 - [ ] write failing tests in `tests/quotaReserve.test.ts`:

@@ -126,13 +126,45 @@
   font-size: 12px;
   color: var(--text-tertiary);
 }
+.reason {
+  flex: 1 1 100%;
+  font-size: 12px;
+  color: var(--amber-text);
+}
+.confirm {
+  flex: 1 1 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--amber-30);
+  border-radius: 8px;
+  background: var(--amber-10);
+}
+.consequence {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+.confirmNote {
+  margin: 4px 0 0;
+  color: var(--amber-text);
+  font-size: 12px;
+}
+.confirmActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+}
 @media (max-width: 700px) {
   .drawer {
     // The narrow row places the refresh button and windows explicitly; keep the drawer below them.
     grid-row: 3;
     margin-top: 0;
   }
-  .footer {
+  .footer,
+  .confirmActions {
     justify-content: flex-start;
   }
 }

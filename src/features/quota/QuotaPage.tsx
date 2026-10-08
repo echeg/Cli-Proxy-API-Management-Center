@@ -241,7 +241,7 @@ export function QuotaPage() {
   /* Loading and quota actions. */
 
   const { batchLoading, loadQuota } = useQuotaBatchLoader();
-  const { resettingQuotaName, refreshQuota, resetQuota } = useQuotaActions(
+  const { resettingQuotaName, refreshQuota, resetQuota, performReset } = useQuotaActions(
     disableControls,
     formatDisplayText
   );
@@ -440,6 +440,8 @@ export function QuotaPage() {
             showEmails={showEmails}
             canRefresh={canUseActions}
             onRefresh={(entry) => void refreshQuota(entry.file, QUOTA_ADAPTERS[entry.type])}
+            onReset={(entry) => performReset(entry.file, QUOTA_ADAPTERS[entry.type])}
+            resettingKey={resettingQuotaName}
           />
         ) : viewMode === 'timeline' ? (
           <QuotaTimeline

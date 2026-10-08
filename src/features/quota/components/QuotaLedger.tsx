@@ -19,8 +19,13 @@ import {
 import type { LedgerWindow } from '../ledgerModel';
 import type { QuotaFileEntry } from '../logic';
 import type { QuotaCardState } from '../providers';
+import { codexResetAction, countResets } from '../resetActions';
 import { buildResetInventory } from '../resetInventory';
-import { QuotaLedgerResetsChip, QuotaLedgerResetsDrawer } from './QuotaLedgerResets';
+import {
+  ClaudeLedgerResetsDrawer,
+  QuotaLedgerResetsChip,
+  QuotaLedgerResetsDrawer,
+} from './QuotaLedgerResets';
 import styles from './QuotaLedger.module.scss';
 
 type Props = {
@@ -31,6 +36,10 @@ type Props = {
   showEmails: boolean;
   canRefresh: boolean;
   onRefresh: (entry: QuotaFileEntry) => void;
+  /** Spends a Codex reset without a modal; the drawer collects the confirmation. */
+  onReset?: (entry: QuotaFileEntry) => Promise<unknown> | void;
+  /** Cache key of the credential whose Codex reset is in flight. */
+  resettingKey?: string | null;
   /** Pins the clock (SSR tests); defaults to the shared minute clock. */
   now?: number;
 };
@@ -128,6 +137,8 @@ function LedgerRow({
   showEmails,
   canRefresh,
   onRefresh,
+  onReset,
+  codexResetting,
   now,
 }: {
   entry: QuotaFileEntry;
@@ -135,11 +146,14 @@ function LedgerRow({
   showEmails: boolean;
   canRefresh: boolean;
   onRefresh: () => void;
+  onReset?: () => Promise<unknown> | void;
+  codexResetting: boolean;
   now: number;
 }) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const [resetsOpen, setResetsOpen] = useState(false);
+  const [claudeResetting, setClaudeResetting] = useState(false);
   const resetsId = useId();
   const resets = buildResetInventory(entry.type, quota, now);
   const windows = ledgerWindows(entry.type, quota, t);
@@ -148,6 +162,8 @@ function LedgerRow({
   const name = getQuotaDisplayName(entry.file);
   const label = showEmails ? name : maskQuotaName(name);
   const loading = quota?.status === 'loading';
+  const resetting = codexResetting || claudeResetting;
+  const actionsBlocked = !canRefresh || loading || Boolean(entry.file.disabled);
   const plan = ledgerPlanLabel(entry.type, quota, t);
   const errorMessage = resolveQuotaErrorMessage(
     t,
@@ -169,7 +185,8 @@ function LedgerRow({
           controls={resetsId}
           showEmails={showEmails}
           now={now}
-          onToggle={() => setResetsOpen(!resetsOpen)}
+          // The drawer that started a reset stays open until it settles.
+          onToggle={() => setResetsOpen(resetting || !resetsOpen)}
         />
       </div>
       <div className={styles.windows}>
@@ -204,22 +221,47 @@ function LedgerRow({
       <Button
         variant="ghost"
         size="sm"
-        disabled={!canRefresh || loading || entry.file.disabled}
+        disabled={actionsBlocked || resetting}
         onClick={onRefresh}
         aria-label={t('quota_management.ledger.refresh_credential', { name: label })}
       >
         <IconRefreshCw size={15} />
       </Button>
-      {resetsOpen && (
-        <QuotaLedgerResetsDrawer
-          id={resetsId}
-          provider={entry.type}
-          inventory={resets}
-          loading={loading}
-          showEmails={showEmails}
-          now={now}
-        />
-      )}
+      {resetsOpen &&
+        (entry.type === 'claude' ? (
+          <ClaudeLedgerResetsDrawer
+            id={resetsId}
+            inventory={resets}
+            loading={loading}
+            showEmails={showEmails}
+            now={now}
+            file={entry.file}
+            refreshToken={quota}
+            enabled={quota?.status === 'success'}
+            disabled={actionsBlocked}
+            displayName={label}
+            onRefresh={onRefresh}
+            onBusyChange={setClaudeResetting}
+          />
+        ) : (
+          <QuotaLedgerResetsDrawer
+            id={resetsId}
+            provider={entry.type}
+            inventory={resets}
+            loading={loading}
+            showEmails={showEmails}
+            now={now}
+            action={
+              entry.type === 'codex' && onReset
+                ? codexResetAction(t, countResets(resets?.items ?? []), {
+                    blocked: actionsBlocked || resetting,
+                    busy: codexResetting,
+                    onConfirm: onReset,
+                  })
+                : undefined
+            }
+          />
+        ))}
     </article>
   );
 }
@@ -232,6 +274,8 @@ export function QuotaLedger({
   showEmails,
   canRefresh,
   onRefresh,
+  onReset,
+  resettingKey = null,
   now: nowProp,
 }: Props) {
   const { t } = useTranslation();
@@ -307,6 +351,10 @@ export function QuotaLedger({
                 showEmails={showEmails}
                 canRefresh={canRefresh}
                 onRefresh={() => onRefresh(entry)}
+                onReset={onReset ? () => onReset(entry) : undefined}
+                codexResetting={
+                  resettingKey !== null && resettingKey === getQuotaCacheKey(entry.file)
+                }
               />
             ))}
           </section>
