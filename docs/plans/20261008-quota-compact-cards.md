@@ -139,14 +139,14 @@
 ## Implementation Steps
 
 ### Task 1: Extract routing and Fast mode state into hooks
-- [ ] write failing tests in `tests/quotaSettingsHooks.test.ts` for pure helpers extracted alongside the hooks:
+- [x] write failing tests in `tests/quotaSettingsHooks.test.ts` for pure helpers extracted alongside the hooks:
   - the routing load → values/baseline mapping (via the existing `readSubscriptionRouting`)
   - the dirty/patch computation (via the existing `subscriptionRoutingPatch`)
   - TTL validation (`goDurationSeconds`)
   - Fast mode toggle request payload and error mapping (spy on `configApi.updateCodexFastMode`)
-- [ ] create `src/features/quota/hooks/useSubscriptionRouting.ts` (load guarded by connection revision, values, dirty, `save()` → `subscriptionRoutingApi.update` + `clearCache('routing/strategy')` + `fetchConfig(true)`, error/saved state) and `hooks/useCodexFastMode.ts` (read `config.codexFastMode`, immediate save, error), moving the logic out of `SubscriptionRouting.tsx` / `CodexFastMode.tsx` without behavior change
-- [ ] make `SubscriptionRouting.tsx` and `CodexFastMode.tsx` use the hooks, so the existing `tests/subscriptionRouting.test.ts` and `tests/codexFastMode.test.ts` keep passing unchanged
-- [ ] run `bun test tests/quotaSettingsHooks.test.ts tests/subscriptionRouting.test.ts tests/codexFastMode.test.ts` and `bun run verify` - must pass before task 2
+- [x] create `src/features/quota/hooks/useSubscriptionRouting.ts` (load guarded by connection revision, values, dirty, `save()` → `subscriptionRoutingApi.update` + `clearCache('routing/strategy')` + `fetchConfig(true)`, error/saved state) and `hooks/useCodexFastMode.ts` (read `config.codexFastMode`, immediate save, error), moving the logic out of `SubscriptionRouting.tsx` / `CodexFastMode.tsx` without behavior change
+- [x] make `SubscriptionRouting.tsx` and `CodexFastMode.tsx` use the hooks, so the existing `tests/subscriptionRouting.test.ts` and `tests/codexFastMode.test.ts` keep passing unchanged
+- [x] run `bun test tests/quotaSettingsHooks.test.ts tests/subscriptionRouting.test.ts tests/codexFastMode.test.ts` and `bun run verify` - must pass before task 2
 
 ### Task 2: One-line settings toolbar
 - [ ] write failing SSR tests in `tests/quotaSettingsToolbar.test.ts` for `QuotaSettingsToolbar`, rendered with injected hook state through props:
