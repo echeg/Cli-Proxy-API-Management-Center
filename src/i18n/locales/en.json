@@ -1557,6 +1557,10 @@
     }
   },
   "quota_management": {
+    "toolbar": {
+      "switching": "Switching",
+      "last": "last {{name}} · {{time}}"
+    },
     "reserve": {
       "badge": "Reserve {{percent}}% · {{mode}}",
       "badge_held": "Held until {{date}} · {{mode}}",

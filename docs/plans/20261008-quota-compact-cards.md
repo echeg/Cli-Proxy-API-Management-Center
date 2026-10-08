@@ -149,7 +149,7 @@
 - [x] run `bun test tests/quotaSettingsHooks.test.ts tests/subscriptionRouting.test.ts tests/codexFastMode.test.ts` and `bun run verify` - must pass before task 2
 
 ### Task 2: One-line settings toolbar
-- [ ] write failing SSR tests in `tests/quotaSettingsToolbar.test.ts` for `QuotaSettingsToolbar`, rendered with injected hook state through props:
+- [x] write failing SSR tests in `tests/quotaSettingsToolbar.test.ts` for `QuotaSettingsToolbar`, rendered with injected hook state through props:
   - strategy select
   - affinity toggle + TTL input
   - Codex and Claude preferred-account selects with masked names and a "last selected" short text (`maskQuotaName` when `showEmails` is false)
@@ -158,13 +158,14 @@
   - an invalid TTL error shown inline
   - long hints present as `title` attributes
   - a disabled state when controls are unavailable
-- [ ] implement `src/features/quota/components/QuotaSettingsToolbar.tsx` + `.module.scss`:
+- [x] implement `src/features/quota/components/QuotaSettingsToolbar.tsx` + `.module.scss`:
   - a single row that wraps gracefully below about 1400px
   - theme tokens; `Select size="sm"`, `ToggleSwitch`, `Input`
   - a container component wires `useSubscriptionRouting`, `useCodexFastMode` and the existing activity polling (reuse `SubscriptionAccounts` logic or extract its polling into `useSubscriptionActivity`)
-- [ ] in `QuotaPage.tsx`, replace `<SubscriptionRouting>` + `<CodexFastMode>` with the toolbar in all views, keeping the `key={sessionGeneration}` session reset and the "files only when matching the session" rule
-- [ ] add the `quota_management.toolbar.*` keys in all six locales; reuse the existing `quota_management.routing.*` / `codex_fast.*` / `config_management.visual.sections.network.*` keys where the text is identical
-- [ ] run `bun test tests/quotaSettingsToolbar.test.ts tests/subscriptionRouting.test.ts tests/codexFastMode.test.ts tests/vietnameseLocale.test.ts tests/koreanLocale.test.ts` and `bun run verify` - must pass before task 3
+- [x] in `QuotaPage.tsx`, replace `<SubscriptionRouting>` + `<CodexFastMode>` with the toolbar in all views, keeping the `key={sessionGeneration}` session reset and the "files only when matching the session" rule
+- [x] add the `quota_management.toolbar.*` keys in all six locales; reuse the existing `quota_management.routing.*` / `codex_fast.*` / `config_management.visual.sections.network.*` keys where the text is identical
+- [x] run `bun test tests/quotaSettingsToolbar.test.ts tests/subscriptionRouting.test.ts tests/codexFastMode.test.ts tests/vietnameseLocale.test.ts tests/koreanLocale.test.ts` and `bun run verify` - must pass before task 3
+- [x] ➕ added a shared `components/ProviderPill.tsx` (Auth Files badge colors via `getTypeColor`) for the toolbar and cards; `SubscriptionRouting.tsx`/`CodexFastMode.tsx` are no longer rendered by the page but stay as hook-backed components with their existing tests (revisit in Task 9)
 
 ### Task 3: Totals strip with "Resets held"
 - [ ] write failing tests in `tests/quotaTotalsModel.test.ts` for `buildQuotaTotals(entries, quotaFor, t, nowMs)`:

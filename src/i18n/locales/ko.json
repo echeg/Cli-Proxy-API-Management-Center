@@ -1557,6 +1557,10 @@
     }
   },
   "quota_management": {
+    "toolbar": {
+      "switching": "전환",
+      "last": "최근 {{name}} · {{time}}"
+    },
     "reserve": {
       "badge": "예약 {{percent}}% · {{mode}}",
       "badge_held": "{{date}}까지 보류 · {{mode}}",

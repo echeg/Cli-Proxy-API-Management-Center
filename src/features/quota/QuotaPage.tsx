@@ -25,8 +25,7 @@ import { QuotaHeader } from './components/QuotaHeader';
 import { QuotaCard } from './components/QuotaCard';
 import { QuotaTimeline } from './components/QuotaTimeline';
 import { QuotaLedger } from './components/QuotaLedger';
-import { CodexFastMode } from './components/CodexFastMode';
-import { SubscriptionRouting } from './components/SubscriptionRouting';
+import { QuotaSettingsBar } from './components/QuotaSettingsToolbar';
 import { maskQuotaName, maskQuotaText } from './ledgerModel';
 import {
   CARD_ENTRANCE_BUDGET_MS,
@@ -356,13 +355,13 @@ export function QuotaPage() {
       />
 
       <section className={styles.workbench}>
-        <SubscriptionRouting
+        <QuotaSettingsBar
           key={sessionGeneration}
           disabled={disableControls}
           files={filesGeneration === sessionGeneration ? files : []}
           showEmails={showEmails}
+          resolvedTheme={resolvedTheme}
         />
-        <CodexFastMode key={`codex-fast-${sessionGeneration}`} disabled={disableControls} />
         {/* Keep provider navigation above the search and display sort controls. */}
         <div className={styles.tabsRow} data-reveal>
           <ProviderTabs

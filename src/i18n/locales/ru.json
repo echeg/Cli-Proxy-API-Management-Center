@@ -1560,6 +1560,10 @@
     }
   },
   "quota_management": {
+    "toolbar": {
+      "switching": "Переключение",
+      "last": "последний {{name}} · {{time}}"
+    },
     "reserve": {
       "badge": "Резерв {{percent}}% · {{mode}}",
       "badge_held": "Удержан до {{date}} · {{mode}}",

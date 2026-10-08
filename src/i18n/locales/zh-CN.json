@@ -1556,6 +1556,10 @@
     }
   },
   "quota_management": {
+    "toolbar": {
+      "switching": "切换",
+      "last": "最近 {{name}} · {{time}}"
+    },
     "reserve": {
       "badge": "预留 {{percent}}% · {{mode}}",
       "badge_held": "保留至 {{date}} · {{mode}}",
