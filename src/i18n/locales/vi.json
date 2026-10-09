@@ -1591,6 +1591,7 @@
     "description": "Theo dõi trạng thái quota OAuth của credential Antigravity, Codex, Claude, Kimi và xAI.",
     "refresh_all_credentials": "Làm mới mọi credential",
     "last_refresh": "Kiểm tra lần cuối: {{time}}",
+    "last_refresh_just_now": "Kiểm tra lần cuối: vừa xong",
     "sort_label": "Sắp xếp",
     "sort_default": "Mặc định",
     "sort_soonest": "Sớm khôi phục nhất",

@@ -1680,6 +1680,7 @@
     "description": "Monitor OAuth quota status for Antigravity, Codex, Claude, Kimi, and xAI credentials.",
     "refresh_all_credentials": "Refresh all credentials",
     "last_refresh": "Last checked: {{time}}",
+    "last_refresh_just_now": "Last checked: just now",
     "sort_label": "Sort",
     "sort_default": "Default",
     "sort_soonest": "Soonest recovery",

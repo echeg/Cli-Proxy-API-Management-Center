@@ -1,6 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { IconRefreshCw } from '@/components/ui/icons';
 import { useCountUp } from '@/hooks/motion';
+import { useNow } from '@/hooks/useNow';
+import { formatRelativeInstant } from '@/utils/quota';
+import { MINUTE_MS } from '@/utils/time/durations';
 import styles from './QuotaHeader.module.scss';
 
 export type QuotaHeaderProps = {
@@ -13,6 +16,8 @@ export type QuotaHeaderProps = {
   onRefreshAll: () => void;
   showEmails?: boolean;
   onToggleEmails?: () => void;
+  /** Injectable clock for tests/screenshots; defaults to the shared minute clock. */
+  now?: number;
 };
 
 /**
@@ -30,6 +35,7 @@ export function QuotaHeader(props: QuotaHeaderProps) {
     onRefreshAll,
     showEmails,
     onToggleEmails,
+    now: nowProp,
   } = props;
   const { t, i18n } = useTranslation();
   // Animate the loaded count as batches finish.
@@ -38,6 +44,18 @@ export function QuotaHeader(props: QuotaHeaderProps) {
   const validLastRefresh =
     lastRefreshDate && Number.isFinite(lastRefreshDate.getTime()) ? lastRefreshDate : null;
   const locale = i18n.resolvedLanguage ?? i18n.language;
+  const tick = useNow(nowProp === undefined && validLastRefresh !== null);
+  const now = nowProp ?? tick;
+  // The shared clock only advances once a minute, so a refresh that just
+  // finished can sit slightly *ahead* of `now`. Anything under a minute old —
+  // including that skew — reads "just now" rather than "in 1 minute".
+  const lastRefreshLabel = validLastRefresh
+    ? now - validLastRefresh.getTime() < MINUTE_MS
+      ? t('quota_management.last_refresh_just_now')
+      : t('quota_management.last_refresh', {
+          time: formatRelativeInstant(validLastRefresh.getTime(), now, locale),
+        })
+    : null;
 
   return (
     <header className={styles.header}>
@@ -101,12 +119,7 @@ export function QuotaHeader(props: QuotaHeaderProps) {
                   timeStyle: 'long',
                 })}
               >
-                {t('quota_management.last_refresh', {
-                  time: validLastRefresh.toLocaleString(locale, {
-                    dateStyle: 'short',
-                    timeStyle: 'medium',
-                  }),
-                })}
+                {lastRefreshLabel}
               </time>
             )}
           </span>
