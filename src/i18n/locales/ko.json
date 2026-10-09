@@ -1955,7 +1955,7 @@
     "toggle_collapse": "사이드바 접기",
     "expand": "펼치기",
     "collapse": "접기",
-    "subtitle": "CLI Proxy API 콘솔",
+    "subtitle": "Agent Proxy 콘솔",
     "auth_files_count": "인증 파일: {{count}}개"
   },
   "footer": {

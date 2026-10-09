@@ -1912,7 +1912,7 @@
     "toggle_collapse": "Thu gọn thanh bên",
     "expand": "Mở rộng",
     "collapse": "Thu gọn",
-    "subtitle": "Bảng điều khiển CLI Proxy API",
+    "subtitle": "Bảng điều khiển Agent Proxy",
     "auth_files_count": "File xác thực: {{count}}"
   },
   "footer": {
